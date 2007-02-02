@@ -1,5 +1,5 @@
 /**
- *   (c) 2001-2006 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.0 downloadable.c 
  *
  *   This program is free software; you can redistribute it and/or modify

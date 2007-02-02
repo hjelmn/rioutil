@@ -1,5 +1,5 @@
 /**
- *   (c) 2003-2006 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2003-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.1 id3.c 
  *
  *   This program is free software; you can redistribute it and/or modify

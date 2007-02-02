@@ -1,5 +1,5 @@
 /**
- *   (c) 2005-2006 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2005-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.0 file_list.c
  *   
  *   c version of librioutil
