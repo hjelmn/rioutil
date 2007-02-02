@@ -1,0 +1,5 @@
+# The library included with the rioutil package is only used by the
+# utilities in this package.  Therefore, it is unnecessary to create
+# separate librioutil and librioutil-dev packages.
+
+rioutil: non-dev-pkg-with-shlib-symlink usr/lib/librioutil.so.1.5.0 usr/lib/librioutil.so

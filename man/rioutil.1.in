@@ -1,0 +1,114 @@
+.TH @PACKAGE@ "1" "20 January 2004" "Version @VERSION@" "Unix Rio Utility"
+
+.SH Name
+	@PACKAGE@ \- Unix Rio Utility
+.SH SYNOPSIS
+	@PACKAGE@ <option> [file(s)]
+.SH DESCRIPTION
+.PP
+rioutil is a program designed to interface with Sonic Blue's Rio 600/800/900/Riot/S-Series and psa[play.
+.TP
+\fB\-l\fR, \fB\-\-list\fR
+list files currently on the rio.
+.TP
+\fB\-i\fR, \fB\-\-info\fR
+return info about rio. i.e. name, memory, etc..
+.TP
+\fB\-j\fR, \fB\-\-playlist\fR <name> <list of mem_unit,song>
+create a playlist with name on an S-Series or newer Rio
+.TP
+example (create the playlist fubar with song 0 on mem_unit 0 and song 1 on mem_unit 1):
+.IP \(bu 4
+rioutil -j fubar 0,0 1,0
+.TP
+\fB\-n\fR, \fB\-\-name=string\fR
+rename the rio. 15 Chars MAX
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+print version number of rioutil
+.TP
+\fB\-?\fR, \fB\-h\fR, \fB--help\fR
+show simple help screen 
+.SH Options
+.TP
+\fB\-e\fR, \fB\-\-debug\fR
+increase debug level -eee yields full verbosity
+.TP
+\fB\-k\fR, \fB\-\-nocolor\fR
+supress ansi color output
+.TP
+\fB\-z\fR, \fB\-\-recovery\fR
+use recovery mode. works with -f or -u
+.TP
+\fB\-o\fR, \fB\-\-device=int\fR
+specify the minor number of the rio. (doesnt work right now)
+.TP
+\fB\-m\fR, \fB\-\-memory=int\fR
+specify which memory device to use.
+internal = 0
+external = 1
+.SH Uploading
+.TP
+\fB\-a\fR, \fB\-\-upload=string\fR
+upload a new track/file to the rio.
+.TP
+\fB\-b\fR, \fB\-\-bulk\fR
+upload multiple tracks/files.
+.TP
+\fB\-p\fR, \fB\-\-pipe <is mp3> <filename> <bitrate> <samplerate>\fR
+reads a file from stdin and uploads it to the rio.
+.TP
+example:
+.IP \(bu 4
+cat file.mp3 | rioutil --artist "Foo" --pipe 1 file.mp3 128 44100
+.TP
+\fB\-u\fR, \fB\-\-update=string\fR
+special upload function for installing new firmware. argument is a .lok file.
+.TP
+\fB\-s\fR, \fB\-\-artist=string\fR
+specify the artist of the track to be uplaoded. 63 Chars MAX
+.TP
+\fB\-t\fR, \fB\-\-title=string\fR
+specify the title of the track to be uploaded. 63 Chars MAX
+.TP
+\fB\-r\fR, \fB\-\-album=string\fR
+specify the album of the track to be uploaded. 63 Chars MAX
+.SH Downloading
+.TP
+\fB\-c\fR, \fB\-\-download=int\fR
+download track(s) from the rio.
+.TP
+syntax:
+.IP \(bu 4
+\-c 12		download track 12\n
+.IP \(bu 4
+\-c "1-12"		download tracks 1 through 12\n
+.IP \(bu 4
+\-c "1 2 3"	download tracks 1, 2 and 3\n
+.SH Deleting
+.TP
+\fB\-d\fR, \fB\-\-delete=int\fR
+delete track(s) from the rio.
+.TP
+syntax:
+.IP \(bu 4
+\-d 12		delete track 12\n
+.IP \(bu 4
+\-d "1-12"		delete tracks 1 through 12\n
+.IP \(bu 4
+\-d "1 2 3"	delete tracks 1, 2 and 3\n
+.TP
+\fB\-f\fR, \fB\-\-format\fR
+format memory device.
+.SH fckrio
+replaced by rioutil -z
+works with update and format commands
+.SH AUTHOR
+Written by Nathan Hjelm.
+.SH REPORTING BUGS
+Report bugs to <hjelmn@users.sourceforge.net>.
+.SH COPYRIGHT
+Copyright\(co 2001-2005 Nathan Hjelm.
+.br
+This is free software; see the source for copying conditions. There is NO
+warranty.

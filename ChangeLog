@@ -1,0 +1,258 @@
+Dec  07 2006:
+	- Removed upload_from_pipe_rio function from librioutil. This functionality should be handled
+	outside the library.
+Aug  04 2006:
+	- Added real debian packaging from debian.
+Oct  12 2005:
+	- Removed libtool for now since it is more of a problem than a benefit.
+Aug  30 2005:
+	- Delete now works with rio nitrus.
+	- rioutil should no longer time out talking to the device on the call
+	subsequent to an add call.
+	- Updated mp3.c for better mpeg parsing.
+Jul  03 2005:
+	- Added preliminary nitrus support. Uploading/downloading work to a degree as does delete.
+Feb  23 2005:
+	- Added prebinding for darwin/macosx hosts
+Feb  22 2005:
+	- Removed empty bsd_driver folder. (use libusb)
+	- Removed depricated macosx and usbdevfs driver. (use libusb)
+	- Updated rios.c linux rio driver. (for use with --without-libusb on linux)
+Feb  03 2005:
+	- Updated id3/mp3 code.
+	- Changed API slightly. More will be changed before the 1.5 release.
+	- rioutil's internal file list is now updated after uploads as well
+	as deletes.
+	- Added first_free_file_rio to API.
+Aug  23 2004:
+	- Fixed a major bug in id3.c that affected linux users with a file not
+	found error. Also fixed in main.c. Thanks to Sarah Hitchens for
+	finding/fixing the bug!
+	- Cleaned up memory leaks in playlist.c and downloadable.c.
+	- Fixed typo in filename for song_management.c.
+May  02 2004:
+	- Changed rio_open call. I don't know what I was thinking when I wrote
+	 it the first time. The new call should no longer seg fault under 2.6.
+Apr  22 2004:
+	- Updated id3.c to version used in upod.
+Jan  20 2004:
+	- Added create_playlist_rio for newer Rio players in librioutil.
+	- Added -j (--playlist) option to rioutil. This may change before release.
+	- Fixed some more bugs in id3 parsing.
+	- Added genre and year fields to flash players.
+	- Added -k (--nocolor) option to suppress ansi color.
+	- Updated the man page to reflect recent changes.
+Jan  13 2004:
+	- Added support for downloading from S-Series Rios with firmware version 2.0
+	 or higher.
+	- Fixed a bug in mp3.c which cause songs to upload short.
+Jan  10 2004:
+	- Fixed bugs in mp3.c and id3.c.
+	- Added bitrate to -l option
+Sept 02 2003:
+	- More code cleanup
+	- Some changes to the rios_t structure.
+	- new function to get rio's type (return_type_rio (rios_t *))
+	- Added support for new flash players.
+Aug  27 2003:
+	- Fixed a bug in rioio.c which made CVS version unusable.
+	- Changed the behavior of debug option. -ee is the equiv to the old
+	 -e 2.
+Aug  25 2003:
+	- Version is now up to 1.4 please be aware of some API changes with
+	 this version.
+	 1. Memory sizes are now all returned in kilobytes instead of bytes.
+	 2. Several variables have been removed from the rio structure.
+	- Riot uploads/deletes should work now!
+	- Cleaner interface for USB drivers that will make it easier to add
+	 support for new players. (Maybe Karma, Nitrus, etc ;)
+Jan  16 2003:
+	- Yet more code cleanup. Added a write_cksum_rio internal routine.
+	- Fixed a major typeo in complete_upload_rio. Uploads should work again.
+Jan  13 2003:
+	- Further code cleanup
+	- S-Series should no longer bomb out on RIO_PREFR command
+Jan  09 2003:
+	- Code cleanup, removed all compatability for recognizing old hack (sorry)
+	- (Library) added function for uploading from pipe (needs testing)
+	- (Frontend) added support for uploading from stdin (needs testing)
+Jan  08 2003:
+     These updates correspond to v1.3.1 (currently in CVS):
+	- Updated the version to somthing a little easier to follow
+	- Minor fixes
+	- Mixed results comming in about using rioutil with the S-Series,
+	 but in general the reports are positive :)
+	- Eliminated support to recognize old hack (it was causing wierd problems)
+     Other Changes:
+	- Updated README
+	- Release source to rioutil Firmware Updater
+Dec  19 2002:
+	- Completly changed the downloadable song hack:
+	  - Any file can be downloaded (regardless of what sf was used to ul it)
+	  - Any song that is downloaded will be removed as well.
+	  - No more weird numbering!
+	- General fixes/changes
+Nov  26 2002:
+	- added rio900 support. let me know how well it works!
+	- updated the kernel driver as well with 900 support.
+	- made compat option fixed on ix86, downloads wont work :(
+	  still works on os10 and linuxppc though :)
+	- small code cleanup to make adding devices easier.
+Apr  06 2002:
+	- merged in a patch with improves mp3 recognision using mp3tech.
+Apr  04 2002:
+	- 1.2b1 now current. I have some hope I will get 1.2final out soon!
+	- Updated the build_dpkg.sh file.
+	- libusb is now the default method to connect to the rio
+	goto libusb.sourceforge.net to get the latest version.
+	- You can still use the old default driver with the option
+	--without-libusb.
+	- Small updates to mp3.c to try to improve mp3 recognision.
+	- Small improvement in my english skills (fixed spelling probs). english
+	is my only language and i can't spell!
+	  - On a subnote, I updated the README a bit (though not much of it is spelling).
+	- OK, way to tired so off to bed.
+Feb  13 2002:
+	- Implemented a solution to lost song bug. It needs testing!
+	- Due to fixing a major bug, version is now 1.2alpha
+Feb  11 2002:
+	- Fixed glaring bugs in driver_macosx.c.
+	- Fixed my implementaion of basename.
+Jan  08 2002:
+	- Fixed a small bug with recognising some mp3s
+Jan  07 2002:
+	- Fixed a small bug with identifying file types.
+	- Other small bug fixes.
+	- If anyone noticed, -o option is back, it only works with libusb and standard drivers.
+Dec  20 2001:
+	- Started documenting functions.
+	- Delete now will mark spaces as free.
+Dec  19 2001:
+	- CVS source up again.
+Dec  18 2001:
+	- Rewrote some sections of code to fix serious memory leaks.
+	- Readded --info to usage() in main.c.
+	- Sped up builing of file list.
+Dec  14 2001:
+	- 1.0.6 release ready.
+
+	- now checks to make sure it is uploading a file (not a directory or device).
+	- finally changed library to librioutil.so.1.0.0.
+	- no longer needs id3lib.
+	- should compile correctly under NetBSD and MacOS X.
+	- many other minor bug fixes and enhancements.
+Nov  28 2001:
+	- improved mp3 uploading.
+Nov  16 2001:
+	- 1.0.4 Release ready.
+	
+	- Even more small updates to main.c
+
+	- Created a new function for librioutil:
+	       return_file_name_rio(rio_instance_t *rio, u_int32_t song_id, u_int8_t memory_unit)
+	  this is used to notify the user what file is being downloaded.
+
+	- Added TODO file, if you are having trouble check it before notifying me of bugs.
+
+	- figured that info1 might be folder?
+	- wma.c updated but sill broken! damn M$ sucks ass
+	- Excuse the language above <grin>
+Nov  11 2001:
+	- Further updates to main.c
+	- Debugging now outputed to stderr now
+	- Uploading .bin files may work now (?)
+Nov  03 2001:
+	- Updated main.c (clean up source).
+Oct  31 2001:
+	- Updated delete, upload, download syntax.
+Oct  24 2001:
+	- fixed a few small lingering bugs.
+Sep  17 2001:
+	- fixed long-standing bug in upload!
+	- changed upload apearance slightly.
+	- 1.0 release ready. Starting on code cleanup w/ few to no changes on API.
+Sep  13 2001:
+	- fixed distro problem where drivers disapeared
+Aug  16 2001:
+	- more bug fixes.
+	- readded linux_driver directory
+Aug  14 2001:
+	0.7.1: Minor bugfix release
+	- Added spec files.
+	- tarball is made from make dist now.
+	- corrected man page.
+	- minor bug fixes.
+Aug  10 2001:
+	- Firmware update works again.
+	- Ctr-C will now kill a download without leaving the rio in a bad state.
+	- Man page for rioutil now included. (librioutil.3 comming soon)
+	- Included a new program (fckrio).
+Aug  08 2001:
+	- Dummy headers no longer show up on list (for mp3s you will see a 1 under d if a dummy exists).
+
+	----- librioutil changes -----
+	- Fixed a bug in upload that caused problems with dummy headers on my rio600.
+	- Download and delete now rely on rio->info.
+	- Delete now clobers dummy headers.
+	- Delete now removes deleted files from file_list and adjusts file numbers of remaining files.
+	- Applied a patch to update_info_rio (thanks Wesley).
+Aug  06 2001:
+	- Addressed bug #448174. Fix was including stdio.h in rio.c (thought i fixed it in 0.5.3)
+	- Cleaned up rio.h
+Aug  03 2001:
+	- rioutil upload can handle playlist files now :)
+	- fixed many typeos (sorry about that)
+July 29 2001:
+	- Memory backpacks are supported.
+	- Header file rio.h no longer relies on config.h
+July 25 2001:
+	- Back in c.
+	- MP3s that are uploaded with rioutil can be downloaded.
+	- Only one header file (rio.h) needed now.
+July 21 2001:
+	- Added code to make it possible to download mp3s.
+	- Error code is a little more complete.
+	- MacOS X code uses cerr instead of cout because of flush problem.
+July 08 2001:
+	- Fixed a problem in basename
+	- Cleaned up driver code
+	- Added osx support!
+	- Added support for libusb!
+July 06 2001:
+	- Added usbdevfs support!
+	- Cleaned up the code a bit.
+July 05 2001:
+	- Included a simple basename fuction for platforms that don't have it.
+	- Included gnugetopt for those who don't have it.
+	- Will compile correctly now on machines where ID3_GetASCII takes 4 args.
+	- Minor bug fixes
+June 23 2001:
+	- Further investigated rio_file structure.
+	- The Rio can now be used as mobile storage! Non music files will
+	 upload and can be dowloaded using rioutil.
+	- Started adding support for WMA uploads.
+	- One more step closer to figuring out how to make MP3s dowloadable.
+June 20 2001:
+	- Applied a patch to mp3.cpp that allows for better support for
+	 getting bitrates and freqs.
+June 19 2001:
+	- Added a (crude) c wrapper. To use it include rio-cwrapper.h.
+	- Updated the licence in the distro to LGPL like it says on
+	 sourceforge.
+	- Various fixes
+June 17 2001:
+	- Fixed a probelm with printing files on little endian machines
+June 9 2001:
+	- Code base is c++ now :/. If this causes any problems I will be more
+	 than happy to change it back to c.
+	- Added code to support firmware updates for Rio800 and psa[play.
+	- Added code to support downloading recorded files from Rio800.
+	- Should be much easier to write a frontend now.
+May 01 2001:
+	- New kernel module! supports multiple rio connections with devfs.
+	- Time set works correctly now!
+	- Update works correctly! Read readme for information on firmware
+	 files.
+April 25 2001:
+	- First release on sourceforge.
+	- Applied a patch that will allow kernel module to work w/out devfs.

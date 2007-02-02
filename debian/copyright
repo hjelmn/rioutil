@@ -1,0 +1,14 @@
+This package was debianized by Jens Schmalzing <jensen@debian.org> on
+Thu,  6 Dec 2001 22:26:25 +0100.
+
+It was downloaded from <URL:http://prdownloads.sourceforge.net/rioutil/
+rioutil-1.2a4.tar.gz>
+
+Upstream Authors:
+Jasper Wallace <jasper@pointless.net>
+Nathan Hjelm <neo@vyger.penguinpowered.com>
+
+Copyright:
+
+rioutil is covered under the terms of the LGPL.  See the file
+/usr/share/common-licenses/LGPL for more information.

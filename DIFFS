@@ -1,0 +1,24 @@
+Differences from rioutil-1.10a:
+ - Add compatibility mode option: -x
+   Used by default for devices with old firmware and optionally 
+   by user to avoid weird behavior seen with dummy file headers. 
+   Using this option disables audio files (mp3/wma) from being 
+   downloaded from the device.
+ - Changed the --info and --list options to respect the --memory option
+   and only print the info/list for the specified memory unit.
+ - When using usbdevfs, the --device option can be used to specify
+   a particular device in 0xXXXXYYYY format where XXXX is the 
+   four digit hexadecimal USB vendor ID and YYYY is the four digit 
+   hexadecimal USB product ID. 
+ - Changed to exit with status of 0 upon success and 1 on error
+   in order to allow better control from scripts.
+ - Changed to use get_mp3_info function from mp3info 
+   in order to solve problems in decoding mp3 headers.
+   Added mp3tech.c and mp3tech.h files from mp3info.
+ - Improved error checking and error messages.
+ - Added 1ms delay during transfers in compatibility mode
+   to avoid device lock ups with older firmware.
+ - Reset device in case of read_bulk timeout error in order 
+   to prevent device from getting locked up.  This avoids 
+   having to remove the battery pack to get the device 
+   working again.  Added usb_reset function to usbdrvlinux.c.

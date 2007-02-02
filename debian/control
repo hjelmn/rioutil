@@ -1,0 +1,17 @@
+Source: rioutil
+Section: sound
+Priority: optional
+Maintainer: Nathan Hjelm <hjelmn@users.sourceforge.net>
+Build-Depends: debhelper (>> 3.0.0), libusb-dev, zlib1g-dev, dpatch
+Standards-Version: 3.6.1
+
+Package: rioutil
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Talk to USB based Diamond MM products
+ rioutil is a program designed to interface with the MP3 players
+ by Sonic Blue, Diamond MM and Digital Networks NA.  It is known
+ to work with a number of models from the Rio series, namely 600,
+ 800, 900, Riot, S-Series and psa[play.  The models Nitrus, Cali,
+ Chiba and Fuse are also supported.  The package includes headers
+ and a set of libraries apart from the tool itself.

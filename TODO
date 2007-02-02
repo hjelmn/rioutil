@@ -1,0 +1,7 @@
+[LOW]  - WMA upload is broken.
+[HIGH] - Hunt down all remaining bugs and quirks.
+
+<DONE> [HIGH] - S-Series firmware update not working correctly. ** Seems to work now **
+<DONE> [MED]  - Track listing does not work on Riot, fix it
+<DONE> [MED]  - There is a SEGV after some deletes. This needs to be fixed.
+<DONE> [VERY HIGH] - Fix missing song bug.
