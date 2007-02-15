@@ -22,6 +22,10 @@
 #ifndef _RIO_H
 #define _RIO_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include <sys/types.h>
 
 /* errors */
@@ -211,5 +215,9 @@ enum rios { RIO600, RIO800, PSAPLAY, RIO900, RIOS10, RIOS50,
 	    RIOS35, RIOS30, RIOFUSE, RIOCHIBA, RIOCALI,
 	    RIORIOT, RIOS11, RIONITRUS, UNKNOWN };
 int return_type_rio (rios_t *rio);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _RIO_H */
