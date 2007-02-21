@@ -42,23 +42,23 @@
 
 struct player_device_info player_devices[] = {
   /* Rio 600/800/900 and Nike psa[play Use bulk endpoint 2 for read/write */
-  {VENDOR_DIAMOND01, PRODUCT_RIO600 , 0x2, 0x2, RIO600   , 3},
-  {VENDOR_DIAMOND01, PRODUCT_RIO800 , 0x2, 0x2, RIO800   , 3},
-  {VENDOR_DIAMOND01, PRODUCT_PSAPLAY, 0x2, 0x2, PSAPLAY  , 3},
-  {VENDOR_DIAMOND01, PRODUCT_RIO900 , 0x2, 0x2, RIO900   , 3},
+  {VENDOR_DIAMOND01, PRODUCT_RIO600 , 0x2, 0x2, RIO600   , "Rio 600"       , 3},
+  {VENDOR_DIAMOND01, PRODUCT_RIO800 , 0x2, 0x2, RIO800   , "Rio 800"       , 3},
+  {VENDOR_DIAMOND01, PRODUCT_PSAPLAY, 0x2, 0x2, PSAPLAY  , "Nike psa[play" , 3},
+  {VENDOR_DIAMOND01, PRODUCT_RIO900 , 0x2, 0x2, RIO900   , "Rio 900"       , 3},
   /* Rio S-Series Uses bulk endpoint 1 for read and 2 for write */
-  {VENDOR_DIAMOND01, PRODUCT_RIOS30 , 0x1, 0x2, RIOS30   , 4},
-  {VENDOR_DIAMOND01, PRODUCT_RIOS35 , 0x1, 0x2, RIOS35   , 4},
-  {VENDOR_DIAMOND01, PRODUCT_RIOS10 , 0x1, 0x2, RIOS10   , 4},
-  {VENDOR_DIAMOND01, PRODUCT_RIOS50 , 0x1, 0x2, RIOS50   , 4},
-  {VENDOR_DIAMOND01, PRODUCT_FUSE   , 0x1, 0x2, RIOFUSE  , 5},
-  {VENDOR_DIAMOND01, PRODUCT_CHIBA  , 0x1, 0x2, RIOCHIBA , 5},
-  {VENDOR_DIAMOND01, PRODUCT_CALI   , 0x1, 0x2, RIOCALI  , 5},
-  {VENDOR_DIAMOND01, PRODUCT_CALI256, 0x1, 0x2, RIOCALI  , 5},
-  {VENDOR_DIAMOND01, PRODUCT_RIOS11 , 0x1, 0x2, RIOS11   , 4},
+  {VENDOR_DIAMOND01, PRODUCT_RIOS30 , 0x1, 0x2, RIOS30   , "Rio S30S"      , 4},
+  {VENDOR_DIAMOND01, PRODUCT_RIOS35 , 0x1, 0x2, RIOS35   , "Rio S35S"      , 4},
+  {VENDOR_DIAMOND01, PRODUCT_RIOS10 , 0x1, 0x2, RIOS10   , "Rio S10"       , 4},
+  {VENDOR_DIAMOND01, PRODUCT_RIOS50 , 0x1, 0x2, RIOS50   , "Rio S50"       , 4},
+  {VENDOR_DIAMOND01, PRODUCT_FUSE   , 0x1, 0x2, RIOFUSE  , "Rio Fuse"      , 5},
+  {VENDOR_DIAMOND01, PRODUCT_CHIBA  , 0x1, 0x2, RIOCHIBA , "Rio Chiba"     , 5},
+  {VENDOR_DIAMOND01, PRODUCT_CALI   , 0x1, 0x2, RIOCALI  , "Rio Cali"      , 5},
+  {VENDOR_DIAMOND01, PRODUCT_CALI256, 0x1, 0x2, RIOCALI  , "Rio Cali 256"  , 5},
+  {VENDOR_DIAMOND01, PRODUCT_RIOS11 , 0x1, 0x2, RIOS11   , "Rio S11"       , 4},
   /* Rio Riot Uses bulk endpoint 2 for read and 1 for write */
-  {VENDOR_DIAMOND01, PRODUCT_RIORIOT, 0x2, 0x1, RIORIOT  , 3},
-  {VENDOR_DIAMOND01, PRODUCT_NITRUS,  0x1, 0x2, RIONITRUS, 5},
+  {VENDOR_DIAMOND01, PRODUCT_RIORIOT, 0x2, 0x1, RIORIOT  , "Rio Riot"      , 3},
+  {VENDOR_DIAMOND01, PRODUCT_NITRUS,  0x1, 0x2, RIONITRUS, "Rio Nitrus"    , 5},
   {0}
 };
 
@@ -239,7 +239,7 @@ int get_file_info_rio(rios_t *rio, rio_file_t *file, u_int8_t memory_unit, u_int
       return ret;
 
     /* library handles endianness */
-    file_to_me(file);
+    file_to_arch(file);
     
     /* no file exists with number 0, they are listed from 1 */
     if (file->file_no == 0)
@@ -330,7 +330,7 @@ int get_memory_info_rio(rios_t *rio, rio_mem_t *memory, u_int8_t memory_unit) {
       return ret;
 
   /* swap to big endian if needed */
-  mem_to_me(memory);
+  mem_to_arch (memory);
   
   /* if requested memory unit is out of range Rio returns 256 bytes of 0's */
   if (memory->size == 0)

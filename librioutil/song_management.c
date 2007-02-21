@@ -796,14 +796,14 @@ static int complete_upload_rio (rios_t *rio, u_int8_t memory_unit, info_page_t i
     strncpy((char *)info.data->album2, info.data->album, 48);
   }
 
-  file_to_me (info.data);
+  file_to_arch (info.data);
 
   /* upload the info page */
   rio_log (rio, 0, "complete_upload_rio: writing file header\n");
   
   write_block_rio (rio, (unsigned char *)info.data, sizeof (rio_file_t), "CRIOINFO");
 
-  file_to_me (info.data);
+  file_to_arch (info.data);
   
   
   /* 0x60 command is send by both iTunes and windows softare */
@@ -829,12 +829,12 @@ static int execute_delete_rio (rios_t *rio, u_int8_t memory_unit, rio_file_t *fi
     return -EIO;
 
   /* correct the endianness of data */
-  file_to_me(filep);
+  file_to_arch(filep);
 
   if ((ret = write_block_rio(rio, (unsigned char *)filep, RIO_MTS, NULL)) != URIO_SUCCESS)
     return ret;
 
-  file_to_me(filep);
+  file_to_arch(filep);
 
   if (strncmp((char *)rio->buffer, "SRIODELD", 8) != 0)
     return ret;
@@ -1046,9 +1046,9 @@ int download_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, ch
     UNLOCK(ret);
     
   /* send file header data */
-  file_to_me(&file);
+  file_to_arch (&file);
   write_block_rio(rio, (unsigned char *)&file, sizeof(rio_file_t), NULL);
-  file_to_me(&file);
+  file_to_arch (&file);
   
   if (memcmp(rio->buffer, "SRIONOFL", 8) == 0) {
     /* file does not exist */

@@ -576,6 +576,24 @@ typedef struct _riot_rio_prefs {
   u_int8_t	unk13[1952];
 } riot_prefs_t;
 
+/*                                                                                                                                                     Playlist format used on older players (.lst file format):
+
+  Notes:
+   - The first entry is always blank.
+   - The name is the same as the rio_file->name of the song.
+   - The title is the first 32 characters of rio_file->title.
+*/
+typedef struct _rio_lst {
+  struct song_list {
+    u_int8_t  name[64];
+    u_int32_t unk0[3];
+    u_int32_t entry;
+    u_int32_t unk1[4];
+    u_int8_t  title[32];
+  } playlist[128];
+} rio_plst_t;
+
+
 /***
 
   Internal Functions
@@ -637,7 +655,7 @@ void pretty_print_block (unsigned char *, int, FILE *);
 char *basename(char *x);
 #endif
 
-void file_to_me (rio_file_t *);
-void mem_to_me  (rio_mem_t *);
+void file_to_arch (rio_file_t *);
+void mem_to_arch  (rio_mem_t *);
 
 #endif /* _RIO_INTERNAL_H */

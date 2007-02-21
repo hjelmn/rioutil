@@ -24,7 +24,7 @@
 /*
   Swap rio_file_t to machine endianness (or back)
 */
-void file_to_me (rio_file_t *data) {
+void file_to_arch (rio_file_t *data) {
   data->file_no     = little32_2_arch32(data->file_no);
   data->start       = little32_2_arch32(data->start);
   data->size        = little32_2_arch32(data->size);
@@ -41,7 +41,7 @@ void file_to_me (rio_file_t *data) {
 /*
   Swap rio_mem_t to machine endianness (or back)
 */
-void mem_to_me (rio_mem_t *data) {
+void mem_to_arch (rio_mem_t *data) {
   data->size   = little32_2_arch32(data->size);
   data->used   = little32_2_arch32(data->used);
   data->free   = little32_2_arch32(data->free);

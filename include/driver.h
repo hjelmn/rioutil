@@ -37,6 +37,7 @@ struct player_device_info {
   int iep;
   int oep;
   int type;
+  char *name;
   int gen; /* device generation */
 };
 

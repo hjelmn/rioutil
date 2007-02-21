@@ -36,25 +36,6 @@ extern "C" {
 #define MAX_MEM_UNITS   2
 #define MAX_RIO_FILES   3000 /* arbitrary */
 
-
-/*
-  Playlist structure for older players (.lst file format):
-
-  first entry is always blank.
-  name is copied from rio_file->name
-  title is copied from the first 32 characters of rio_file->title
-  unk[3] is the entry number (LSB first)
-
-  Note: librioutil does not handle creation of playlists on older player.
-*/
-typedef struct _rio_lst {
-    struct song_list {
-	u_int8_t  name[64];
-	u_int32_t unk[8];
-	u_int8_t  title[32];
-    } playlist[128];
-} rio_plst_t;
-
 typedef struct _rio_file_list {
   char artist[64];
   char title[64];
