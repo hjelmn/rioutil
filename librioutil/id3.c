@@ -73,7 +73,7 @@ static int synchsafe_to_int (unsigned char *buf, int nbytes) {
   int error = 0;
 
   for (i = 0, id3v2_len = 0 ; i < nbytes ; i++) {
-    id3v2_len += (id3v2_len << 7) | buf[i] & 0x7f;
+    id3v2_len = (id3v2_len << 7) | buf[i] & 0x7f;
 
     /* the high bit of any can not be set in a syncsafe integer */
     if (buf[i] & 0x80)
