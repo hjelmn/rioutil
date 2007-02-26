@@ -218,7 +218,8 @@ static int check_id_id3v2 (FILE *fh, int offset) {
   fseek (fh, current_offset, SEEK_SET);
 
   for (i = 0 ; i < 4 ; i++)
-    if (identifier[i] != ' ' && (identifier[i] < 'A' || identifier[i] > 'Z'))
+    if (identifier[i] != ' ' && (identifier[i] < 'A' || identifier[i] > 'Z') &&
+	(identifier[i] < '0' && identifier[i] > '9'))
       return -1;
 
   return 0;
