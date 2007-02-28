@@ -1,5 +1,5 @@
 /**
- *   (c) 2001-2006 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.3 main.c
  *
  *   Console based interface for Rios using librioutil
@@ -819,7 +819,7 @@ static int overwrite_file (rios_t *rio, int mem_unit, int argc, char *argv[]) {
 
 static void print_version (void) {
   printf("%s %s\n", PACKAGE, VERSION);
-  printf("Copyright (C) 2003-2006 Nathan Hjelm\n\n");
+  printf("Copyright (C) 2003-2007 Nathan Hjelm\n\n");
   
   printf("%s comes with NO WARRANTY.\n", PACKAGE);
   printf("You may redistribute copies of %s under the terms\n", PACKAGE);
