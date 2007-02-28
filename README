@@ -38,10 +38,7 @@ http://www.amazon.com/o/registry/2T0HLGZAHALMM
 ** building package                                                         **
 ******************************************************************************
 debian:
-% ./configure [options]
-% make
-% cd debian
-% sh build_dpkg.sh
+% dpkg-buildpackage
 
 redhat:
 % ./configure [options]
