@@ -78,7 +78,7 @@ int generate_flist_riomc (rios_t *rio, u_int8_t memory_unit) {
 }
 
 int hdfile_to_mcfile  (hd_file_t *hdf, rio_file_t *file, int file_no) {
-  if (hdf == NULL || file == NULL)
+  if (!hdf || !file)
     return -EINVAL;
 
   file->file_no = file_no;
@@ -153,22 +153,17 @@ int generate_flist_riohd (rios_t *rio) {
 
 int flist_first_free_rio (rios_t *rio, int memory_unit) {
   flist_rio_t *prev;
-  int file_incr, next_num;
+  uint file_incr, next_num;
 
-  if (rio == NULL || memory_unit >= MAX_MEM_UNITS)
+  if (!rio || memory_unit >= MAX_MEM_UNITS)
     return -EINVAL;
 
-  if (return_generation_rio (rio) < 4)
-    file_incr = 0x01;
-  else
-    file_incr = 0x10;
+  /* older devices increment the file id by 1 while newer devices increment the file id by 16 */
+  file_incr = (return_generation_rio (rio) < 4) ? 0x01 : 0x10;
 
-  for (prev = rio->info.memory[memory_unit].files, next_num = file_incr ; prev ; prev = prev->next) {
+  for (prev = rio->info.memory[memory_unit].files, next_num = file_incr ; prev ; prev = prev->next, next_num += file_incr)
     if (next_num < prev->rio_num)
       break;
-
-    next_num += file_incr;
-  }
 
   return next_num;
 }
@@ -183,51 +178,40 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   flist_rio_t *next = NULL, *prev = NULL;
   flist_rio_t *files;
   
-  int next_num;
-  int file_incr;
+  uint next_num, file_incr;
 
-  if (rio == NULL || memory_unit >= MAX_MEM_UNITS)
+  if (!rio || !info.data || memory_unit >= MAX_MEM_UNITS)
     return -EINVAL;
 
-  if (return_generation_rio (rio) < 4)
-    file_incr = 0x01;
-  else
-    file_incr = 0x10;
+  /* older devices increment the file id by 1 while newer devices increment the file id by 16 */
+  file_incr = (return_generation_rio (rio) < 4) ? 0x01 : 0x10;
 
-  next_num = file_incr;
+  rio_log (rio, 0, "librioutil/file_list.c flist_add_rio: entering...\n");
 
-  rio_log (rio, 0, "flist_add_rio: entering...\n");
-
+  /* allocate zeroed space for the new entry */
   flist = calloc (1, sizeof (flist_rio_t));
   if (flist == NULL) {
-    rio_log (rio, -errno, "flist_add_rio: calloc returned an error (%s).\n", strerror (errno));
+    rio_log (rio, -errno, "librioutil/file_list.c flist_add_rio: calloc returned an error (%s).\n", strerror (errno));
 
     return -errno;
   }
 
   files = rio->info.memory[memory_unit].files;
 
-  flist->num = 0;
-  flist->inum = 0;
-
-  if (files == NULL) {
-    rio->info.memory[memory_unit].num_files  = 0;
-    rio->info.memory[memory_unit].total_time = 0;
-  } else {
-    for (next = files ; next ; next = next->next) {
-      if ((info.data->file_no == 0 && next_num < next->rio_num) ||
-	  info.data->file_no == next_num)
+  if (files) {
+    for (next = files, next_num = file_incr ; next ; next = next->next, next_num += file_incr) {
+      if ((info.data->file_no == 0 && next_num < next->rio_num) || info.data->file_no == next_num)
 	break;
 
       prev = next;
-      next_num += file_incr;
     }
     
     if (prev) {
       flist->num  = prev->inum + 1;
       flist->inum = prev->inum + 1;
     }
-  }
+  } else
+    memset (&rio->info.memory[memory_unit], 0, sizeof (mlist_rio_t));
 
   flist->rio_num = next_num;
 
@@ -249,40 +233,36 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   flist->prev = prev;
   
   if (info.data->type == TYPE_MP3)
-    flist->type = MP3;
+    flist->type = RIO_FILETYPE_MP3;
   else if (info.data->type == TYPE_WMA)
-    flist->type = WMA;
+    flist->type = RIO_FILETYPE_WMA;
   else if (info.data->type == TYPE_WAV)
-    flist->type = WAV;
+    flist->type = RIO_FILETYPE_WAV;
   else if (info.data->type == TYPE_WAVE)
-    flist->type = WAVE;
+    flist->type = RIO_FILETYPE_WAVE;
   else
-    flist->type = OTHER;
+    flist->type = RIO_FILETYPE_OTHER;
   
   if (return_generation_rio (rio) > 3)
     memcpy (flist->sflags, info.data->unk1, 3);
   
-  flist->prev = prev;
-  flist->next = next;
-
-  if (prev == NULL)
+  if (prev) {
+    prev->next = flist;
+    flist->prev = prev;
+  } else
     rio->info.memory[memory_unit].files = flist;
 
-  if (flist->prev)
-    flist->prev->next = flist;
-  if (flist->next)
-    flist->next->prev = flist;
+  if (next) {
+    flist->next = next;
+    next->prev = flist;
   
-  if (next != NULL)
-    for ( ; next ; next = next->next) {
-      next->inum++;
-      next->num++;
-    }
+    for ( ; next ; next = next->next, next->inum++, next->num++);
+  }
 
   rio->info.memory[memory_unit].num_files  += 1;
   rio->info.memory[memory_unit].total_time += flist->time;
 
-  rio_log (rio, 0, "flist_add_rio: complete\n");
+  rio_log (rio, 0, "librioutil/file_list.c flist_add_rio: complete\n");
 
   return 0;
 }
@@ -382,7 +362,7 @@ flist_rio_t *return_list_rio (rios_t *rio, u_int8_t memory_unit, u_int8_t list_f
 
  copies the internal file list from a rio and stores it in flist.
 */
-int return_flist_rio (rios_t *rio, u_int8_t memory_unit, u_int8_t list_flags, flist_rio_t **flist) {
+int return_flist_rio (rios_t *rio, u_int8_t memory_unit, rio_filetype list_flags, flist_rio_t **flist) {
   flist_rio_t *tmp;
   flist_rio_t *bflist;
   flist_rio_t *prev = NULL;
@@ -404,12 +384,8 @@ int return_flist_rio (rios_t *rio, u_int8_t memory_unit, u_int8_t list_flags, fl
 
   /* make a copy of the file list with only what we want in it */
   for (tmp = rio->info.memory[memory_unit].files ; tmp ; tmp = tmp->next) {
-    if ( (list_flags == RALL) || ((list_flags & RMP3) && (tmp->type == MP3)) ||
-	 ((list_flags & RWMA) && (tmp->type == WMA)) ||
-	 ((list_flags & RWAV) && ((tmp->type == WAV)
-				  || (tmp->type == WAVE))) ||
-	 ((list_flags & RSYS) && (strstr(tmp->name, ".bin") != NULL)) ||
-	 ((list_flags & RLST) && (strstr(tmp->name, ".lst") != NULL)) ) {
+    if (list_flags & tmp->type)
+    {
       if ((bflist = malloc(sizeof(flist_rio_t))) == NULL) {
 	rio_log (rio, errno, "return_flist_rio: malloc returned an error (%s).\n", strerror (errno));
 

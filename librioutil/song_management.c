@@ -41,7 +41,6 @@ static int init_new_upload_rio (rios_t *rio, u_int8_t memory_unit);
 static int init_overwrite_rio (rios_t *rio, u_int8_t memory_unit);
 static int complete_upload_rio (rios_t *rio, u_int8_t memory_unit, info_page_t info);
 static int bulk_upload_rio (rios_t *rio, info_page_t info, int addpipe);
-static int delete_dummy_hdr (rios_t *rio, u_int8_t memory_unit, u_int32_t fileetr_num);
 static int upload_dummy_hdr (rios_t *rio, u_int8_t memory_unit, rio_file_t *filexp);
 
 /* the guts of any upload */
@@ -111,8 +110,8 @@ int do_upload (rios_t *rio, u_int8_t memory_unit, int addpipe, info_page_t info,
       - URIO_SUCCESS if the file was uploaded.
       - < 0 if an error occured.
 */
-int add_song_rio (rios_t *rio, u_int8_t memory_unit, char *file_name, char *artist,
-		  char *title, char *album) {
+int add_song_rio (rios_t *rio, u_int8_t memory_unit, char *file_name,
+                  const char *artist, const char *title, const char *album) {
   info_page_t song_info;
   int error;
   int addpipe;
@@ -239,7 +238,7 @@ int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, c
     
   if ((addpipe = open(filename, O_RDONLY)) == -1) {
     rio_log (rio, errno, "overwrite_file_rio: open failed\n");
-    return -1;
+    UNLOCK(-1);
   }
   
   if ((ret = do_upload (rio, 0, addpipe, song_info, 1)) != URIO_SUCCESS) {
@@ -994,7 +993,7 @@ int download_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, ch
   if ((ret = get_file_info_rio(rio, &file, memory_unit, file_id)) != URIO_SUCCESS) {
     rio_log (rio, ret, "librioutil/song_management.c download_file_rio: error getting file info.\n");
 
-    return ret;
+    UNLOCK(ret);
   }
 
   /* generate a filename if one was not supplied */

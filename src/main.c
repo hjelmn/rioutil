@@ -579,7 +579,7 @@ static void new_printfiles(rios_t *rio, int mem_unit) {
   flst = (flist_rio_t**) malloc (sizeof(flist_rio_t *) * num_mem_units);
   
   for (j = 0 ; j < num_mem_units ; j++) {
-    if (return_flist_rio (rio, j, RALL, &flst[j]) < 0) {
+    if (return_flist_rio (rio, j, RIO_FILETYPE_ALL, &flst[j]) < 0) {
       printf ("Could not retrieve the file list from memory unit %i\n", j);
 
       continue;
