@@ -425,9 +425,6 @@ int size_flist_rio (rios_t *rio, int memory_unit) {
   return i;
 }
 
-void free_file_list (flist_rio_t *flist) {
-  free_flist_rio (flist);
-}
 
 void free_flist_rio (flist_rio_t *flist) {
   flist_rio_t *tmp, *ntmp;
