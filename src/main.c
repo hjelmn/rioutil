@@ -282,7 +282,7 @@ int main (int argc, char *argv[]) {
       ret = format_mem_rio (&rio, mem_unit);
     else if (flags[9])
       ret = create_playlist (&rio, argc, argv);
-    else if (flags[27])
+    else if (flags[26])
       ret = overwrite_file (&rio, mem_unit, argc, argv);
     else if (flags[2])
       ret = download_tracks (&rio, flag_args[2], mem_unit);
