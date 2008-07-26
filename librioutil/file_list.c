@@ -169,6 +169,60 @@ int flist_first_free_rio (rios_t *rio, int memory_unit) {
 }
 
 /*
+ * Create a new flist struct from the given data
+ */
+flist_rio_t* flist_create (rios_t *rio, info_page_t info)
+{
+    flist_rio_t *flist;
+
+    if (!rio || !info.data)
+      return NULL;
+
+    rio_log( rio, 0, "librioutil/file_list.c flist_create: entering...\n");
+
+    flist = calloc (1, sizeof (flist_rio_t));
+    if (flist == NULL) {
+        rio_log (rio, -errno, "librioutil/file_list.c flist_create: calloc returned an error (%s).\n", strerror (errno));
+
+      return NULL;
+    }
+
+    if (return_generation_rio (rio) > 3)
+        memcpy (flist->sflags, info.data->unk1, 3);
+
+    strncpy(flist->artist, info.data->artist, 64);
+    strncpy(flist->title,  info.data->title, 64);
+    strncpy(flist->album,  info.data->album, 64);
+    strncpy(flist->name,   info.data->name, 64);
+    strncpy(flist->genre,  (char *)info.data->genre2, 22);
+    strncpy(flist->year,   (char *)info.data->year2, 4);
+
+    flist->time       = info.data->time;
+    flist->bitrate    = info.data->bit_rate >> 7;
+    flist->samplerate = info.data->sample_rate;
+    flist->mod_date   = info.data->mod_date;
+    flist->size       = info.data->size;
+    flist->start      = info.data->start;
+    flist->track_number = info.data->trackno2;
+
+    if (info.data->type == TYPE_MP3)
+        flist->type = RIO_FILETYPE_MP3;
+    else if (info.data->type == TYPE_WMA)
+        flist->type = RIO_FILETYPE_WMA;
+    else if (info.data->type == TYPE_WAV)
+        flist->type = RIO_FILETYPE_WAV;
+    else if (info.data->type == TYPE_WAVE)
+        flist->type = RIO_FILETYPE_WAVE;
+    else
+        flist->type = RIO_FILETYPE_OTHER;
+
+    rio_log( rio, 0, "librioutil/file_list.c flist_create: complete\n");
+
+    return flist;
+}
+
+
+/*
   flist_add_rio:
 
   adds a file to the rio's internal file list
@@ -188,77 +242,60 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
 
   rio_log (rio, 0, "librioutil/file_list.c flist_add_rio: entering...\n");
 
-  /* allocate zeroed space for the new entry */
-  flist = calloc (1, sizeof (flist_rio_t));
+  flist = flist_create( rio, info );
   if (flist == NULL) {
-    rio_log (rio, -errno, "librioutil/file_list.c flist_add_rio: calloc returned an error (%s).\n", strerror (errno));
-
-    return -errno;
+    rio_log (rio, -EINVAL, "librioutil/file_list.c flist_add_rio: flist_create failed.\n");
+    return -EINVAL;
   }
 
   files = rio->info.memory[memory_unit].files;
 
-  if (files) {
-    for (next = files, next_num = file_incr ; next ; next = next->next, next_num += file_incr) {
+  if (files == NULL) /* this is the first file added */
+  {
+    rio->info.memory[memory_unit].files = flist;
+
+    flist->prev = NULL;
+    flist->next = NULL;
+    flist->rio_num = file_incr;
+
+    rio->info.memory[memory_unit].num_files = 1;
+    rio->info.memory[memory_unit].total_time = flist->time;
+
+    return URIO_SUCCESS;
+  }
+
+  for (next = files, next_num = file_incr ; next ; next = next->next, next_num += file_incr)
+  {
       if ((info.data->file_no == 0 && next_num < next->rio_num) || info.data->file_no == next_num)
 	break;
 
       prev = next;
-    }
-    
-    if (prev) {
-      flist->num  = prev->inum + 1;
-      flist->inum = prev->inum + 1;
-    }
-  } else
-    memset (&rio->info.memory[memory_unit], 0, sizeof (mlist_rio_t));
+  }
+
+  flist->prev = prev;
+  flist->next = next;
+
+  if (prev)
+    prev->next = flist;
+
+  if (next)
+    next->prev = flist;
+
 
   flist->rio_num = next_num;
 
-  strncpy(flist->artist, info.data->artist, 64);
-  strncpy(flist->title,  info.data->title, 64);
-  strncpy(flist->album,  info.data->album, 64);
-  strncpy(flist->name,   info.data->name, 64);
-  strncpy(flist->genre,  (char *)info.data->genre2, 22);
-
-  strncpy(flist->year,   (char *)info.data->year2, 4);
-  
-  flist->time       = info.data->time;  
-  flist->bitrate    = info.data->bit_rate >> 7;
-  flist->samplerate = info.data->sample_rate;
-  flist->mod_date   = info.data->mod_date;
-  flist->size       = info.data->size;
-  flist->start      = info.data->start;
-  flist->track_number = info.data->trackno2;
-  flist->prev = prev;
-  
-  if (info.data->type == TYPE_MP3)
-    flist->type = RIO_FILETYPE_MP3;
-  else if (info.data->type == TYPE_WMA)
-    flist->type = RIO_FILETYPE_WMA;
-  else if (info.data->type == TYPE_WAV)
-    flist->type = RIO_FILETYPE_WAV;
-  else if (info.data->type == TYPE_WAVE)
-    flist->type = RIO_FILETYPE_WAVE;
-  else
-    flist->type = RIO_FILETYPE_OTHER;
-  
-  if (return_generation_rio (rio) > 3)
-    memcpy (flist->sflags, info.data->unk1, 3);
-  
   if (prev) {
-    prev->next = flist;
-    flist->prev = prev;
-  } else
-    rio->info.memory[memory_unit].files = flist;
-
-  if (next) {
-    flist->next = next;
-    next->prev = flist;
-  
-    for ( ; next ; next = next->next, next->inum++, next->num++);
+    flist->num  = prev->inum + 1;
+    flist->inum = prev->inum + 1;
   }
 
+  /* increment all subsequent file numbers */
+  for ( ; next ; next = next->next)
+  {
+    next->inum++;
+    next->num++;
+  }
+ 
   rio->info.memory[memory_unit].num_files  += 1;
   rio->info.memory[memory_unit].total_time += flist->time;
 
@@ -300,7 +337,7 @@ int flist_get_file_name_rio (rios_t *rio, int memory_unit, int file_no, char *fi
 
   strncpy (file_namep, tmp->name, file_name_len);
 
-  return 0;
+  return URIO_SUCCESS;
 }
 
 /*
