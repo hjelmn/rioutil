@@ -38,6 +38,7 @@
 #endif
 
 #include "rioi.h"
+#include "riolog.h"
 #include "driver.h"
 
 struct player_device_info player_devices[] = {
@@ -95,6 +96,12 @@ static int read_ftypes_rio (rios_t *rio) {
 int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
   int ret;
 
+  set_debug_out( stderr );
+  set_debug_level( debug );
+
+  trace("open_rio(rio=%x,number=%d,debug=%d,fill_structures=%d)", \
+	rio, number, debug, fill_structures);
+
   if (rio == NULL)
     return -EINVAL;
 
@@ -103,9 +110,8 @@ int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
   rio->debug       = debug;
   rio->log         = stderr;
   
-  rio_log (rio, 0,
-	   "open_rio: creating new rio instance. device: 0x%08x\n", number);
-  
+  debug("creating new rio instance. device: 0x%08x", number);
+
   if (debug) {
     rio_log (rio, 0, "open_rio: setting usb driver verbosity level to %i\n",
 	     debug);
@@ -118,6 +124,8 @@ int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
   /* open the USB device (this calls the underlying driver) */
   if ((ret = usb_open_rio (rio, number)) != 0) {
     rio_log (rio, ret, "open_rio: could not open a Rio device\n");
+
+    error("could not open a Rio device: %d", ret);
 
     return ret;
   }

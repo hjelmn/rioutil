@@ -28,6 +28,39 @@
 
 #include "rioi.h"
 
+uint debug_level = 0;
+FILE *debug_out = NULL;
+
+void set_debug_level(uint new_debug_level)
+{
+  debug_level = new_debug_level;
+}
+
+void set_debug_out(FILE* new_debug_out)
+{
+  debug_out = new_debug_out;
+}
+
+void riolog( uint level, char *format, ...)
+{
+  if ( debug_level < level )
+    return;
+
+  if ( debug_out == NULL )
+    return; /* debug_out = stderr; */
+
+  va_list arg;
+
+  va_start( arg, format );
+
+  vfprintf( debug_out, format, arg);
+  fprintf( debug_out, "\n");
+
+  fflush( debug_out );
+
+  va_end( arg );
+}
+
 void rio_log (rios_t *rio, int error, char *format, ...) {
   FILE *debug_out;
   int debug_level;
@@ -99,8 +132,8 @@ void rio_log_data (rios_t *rio, char *dir, unsigned char *data, int data_size) {
 
   rio_log (rio, 0, "dir: %s data size: 0x%08x\n", dir, data_size);
 
-  if ((debug_level > 0 && data_size < 257) || (debug_level > 3))
+  if ((debug_level > 3 && data_size < 257) || (debug_level > 4))
     pretty_print_block (data, data_size, debug_out);
-  else if (rio->debug > 0)
+  else if (rio->debug > 4)
     pretty_print_block (data, 256, debug_out);
 }

@@ -33,6 +33,8 @@
 
 #include "rioi.h"
 
+#include "riolog.h"
+
 #ifdef HAVE_LIBGEN_H
 #include <libgen.h>
 #endif
@@ -50,6 +52,8 @@ int create_playlist_rio (rios_t *rio, char *name, int songs[], int memory_units[
   char filename[PATH_MAX];
   file_list *tmp;
   FILE *fh;
+
+  trace("create_playlist_rio()");
 
   if (!rio || !name || !songs || !memory_units)
     return -EINVAL;
@@ -129,6 +133,8 @@ int playlist_info (info_page_t *newInfo, char *file_name) {
   rio_file_t *playlist_file;
   int fnum;
 
+  trace("playlist_info()");
+
   if (!newInfo || !file_name)
     return -EINVAL;
 
@@ -152,6 +158,8 @@ int playlist_info (info_page_t *newInfo, char *file_name) {
 int new_playlist_info (info_page_t *newInfo, char *name)
 {
   rio_file_t *playlist_file;
+
+  trace("new_playlist_info()");
 
   if (!newInfo || !name)
     return -EINVAL;
