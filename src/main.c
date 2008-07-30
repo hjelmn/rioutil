@@ -51,7 +51,7 @@
 #define max(a, b) ((a > b) ? a : b)
 
 /* a simple version of basename that returns a pointer into x where the basename
-   begines or NULL if x has a trailing slash. */
+   begins or NULL if x has a trailing slash. */
 static char *basename_simple (char *x){
   int i;
  
