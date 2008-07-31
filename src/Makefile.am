@@ -13,3 +13,5 @@ endif
 
 rioutil_LDFLAGS = $(PREBIND_FLAGS)
 rioutil_DEPENDENCIES = $(top_srcdir)/librioutil/librioutil.la
+
+AM_CFLAGS = -Wall -Wextra -pedantic

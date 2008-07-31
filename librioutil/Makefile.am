@@ -25,3 +25,5 @@ librioutil_la_SOURCES = rio.c rioio.c mp3.c downloadable.c \
 			log.c playlist.c id3.c  file_list.c $(DRIVER)
 
 librioutil_la_LDFLAGS = -version-info 6:0:5 $(PREBIND_FLAGS)
+
+AM_CFLAGS = -Wall -Wextra -pedantic
