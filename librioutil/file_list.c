@@ -304,7 +304,7 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   return 0;
 }
 
-int flist_get_file_id_rio (rios_t *rio, int memory_unit, int file_no) {
+int flist_get_file_id_rio (rios_t *rio, uint memory_unit, uint file_no) {
   flist_rio_t *tmp;
 
   for (tmp = rio->info.memory[memory_unit].files ; tmp ; tmp = tmp->next) {
@@ -321,7 +321,7 @@ int flist_get_file_id_rio (rios_t *rio, int memory_unit, int file_no) {
     return tmp->rio_num;
 }
 
-int flist_get_file_name_rio (rios_t *rio, int memory_unit, int file_no, char *file_namep, int file_name_len) {
+int flist_get_file_name_rio (rios_t *rio, uint memory_unit, uint file_no, char *file_namep, int file_name_len) {
   flist_rio_t *tmp;
 
   if (file_namep == NULL)
@@ -345,7 +345,7 @@ int flist_get_file_name_rio (rios_t *rio, int memory_unit, int file_no, char *fi
 
   removes a file from the rio's internal file list
 */
-int flist_remove_rio (rios_t *rio, int memory_unit, int file_no) {
+int flist_remove_rio (rios_t *rio, uint memory_unit, uint file_no) {
   flist_rio_t *flist, *tmp;
 
   if (rio == NULL || memory_unit >= MAX_MEM_UNITS)

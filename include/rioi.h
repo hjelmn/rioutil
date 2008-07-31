@@ -635,9 +635,9 @@ int downloadable_info (info_page_t *newInfo, char *file_name);
 int generate_flist_riomc (rios_t *rio, u_int8_t memory_unit);
 int generate_flist_riohd (rios_t *rio);
 int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info);
-int flist_remove_rio (rios_t *rio, int memory_unit, int file_no);
-int flist_get_file_name_rio (rios_t *rio, int memory_unit, int file_no, char *file_namep, int file_name_len);
-int flist_get_file_id_rio (rios_t *rio, int memory_unit, int file_no);
+int flist_remove_rio (rios_t *rio, uint memory_unit, uint file_no);
+int flist_get_file_name_rio (rios_t *rio, uint memory_unit, uint file_no, char *file_namep, int file_name_len);
+int flist_get_file_id_rio (rios_t *rio, uint memory_unit, uint file_no);
 int size_flist_rio (rios_t *rio, int memory_unit);
 int flist_first_free_rio (rios_t *rio, int memory_unit);
 
