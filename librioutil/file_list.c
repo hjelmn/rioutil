@@ -52,7 +52,7 @@ int generate_flist_riomc (rios_t *rio, u_int8_t memory_unit) {
 
   info.data = &file;
 
-  rio_log (rio, 0, "generate_flist_riomc: entering...\n");
+  debug("generate_flist_riomc()");
 
   ret = URIO_SUCCESS;
 
@@ -73,7 +73,7 @@ int generate_flist_riomc (rios_t *rio, u_int8_t memory_unit) {
     flist_add_rio (rio, memory_unit, info);
   }
   
-  rio_log (rio, 0, "generate_flist_riomc: complete\n");
+  debug("generate_flist_riomc(): complete\n");
 
   return ret;
 }
@@ -172,7 +172,7 @@ int flist_first_free_rio (rios_t *rio, int memory_unit) {
 /*
  * Create a new flist struct from the given data
  */
-flist_rio_t* flist_create (rios_t *rio, info_page_t info)
+static flist_rio_t* flist_create (rios_t *rio, info_page_t info)
 {
     flist_rio_t *flist;
 
@@ -214,8 +214,13 @@ flist_rio_t* flist_create (rios_t *rio, info_page_t info)
         flist->type = RIO_FILETYPE_WAV;
     else if (info.data->type == TYPE_WAVE)
         flist->type = RIO_FILETYPE_WAVE;
+    else if (info.data->type == TYPE_PLS)
+        flist->type = RIO_FILETYPE_PLAYLIST;
     else
+    {
+        warning("Unrecognized file format: %x", info.data->type);
         flist->type = RIO_FILETYPE_OTHER;
+    }
 
     rio_log( rio, 0, "librioutil/file_list.c flist_create: complete\n");
 
@@ -235,17 +240,17 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   
   uint next_num, file_incr;
 
+  debug("flist_add_rio(rio=%x,memory_unit=%d,info)", rio, memory_unit);
+
   if (!rio || !info.data || memory_unit >= MAX_MEM_UNITS)
     return -EINVAL;
 
   /* older devices increment the file id by 1 while newer devices increment the file id by 16 */
   file_incr = (return_generation_rio (rio) < 4) ? 0x01 : 0x10;
 
-  rio_log (rio, 0, "librioutil/file_list.c flist_add_rio: entering...\n");
-
   flist = flist_create( rio, info );
   if (flist == NULL) {
-    rio_log (rio, -EINVAL, "librioutil/file_list.c flist_add_rio: flist_create failed.\n");
+    error("flist_add_rio: flist_create failed.");
     return -EINVAL;
   }
 
@@ -300,7 +305,7 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   rio->info.memory[memory_unit].num_files  += 1;
   rio->info.memory[memory_unit].total_time += flist->time;
 
-  rio_log (rio, 0, "librioutil/file_list.c flist_add_rio: complete\n");
+  debug("flist_add_rio: success");
 
   return 0;
 }

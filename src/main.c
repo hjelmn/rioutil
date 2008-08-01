@@ -654,10 +654,11 @@ static void new_printfiles(rios_t *rio) {
 }
 
 static void print_info(rios_t *rio) {
-  int i, j, ticks, ttime, type, ret;
+  int i, j, ticks, type, ret;
+  uint ttime;
   int num_mem_units;
   int nfiles = 0;
-  int ptt = 0, ptf = 0;
+  uint ptt = 0, ptf = 0;
 
   float ptu, free_mem;
   float used = 0.;
@@ -759,8 +760,8 @@ static void print_info(rios_t *rio) {
 
     printf("] %03.01f %%\n\n", 100.0 * (used / total));
     
-    printf("Total Time: %02i:%02i:%02i\n", (int)ttime / 3600, 
-	   (int)(ttime % 3600) / 60, (int)ttime % 60);
+    printf("Total Time: %02u:%02u:%02u\n", (uint)ttime / 3600, 
+	   (uint)(ttime % 3600) / 60, (uint)ttime % 60);
     
     ptt += ttime;
     ptu += used;
@@ -771,8 +772,8 @@ static void print_info(rios_t *rio) {
   }
 
   printf("Player Space Used: %03.01f MiB in %i files\n", used, nfiles);
-  printf("Total Player Time: %02i:%02i:%02i\n\n", (int)ptt / 3600, 
-	 (int)(ptt % 3600) / 60, (int)ptt % 60);
+  printf("Total Player Time: %02u:%02u:%02u\n\n", (uint)ptt / 3600, 
+	 (uint)(ptt % 3600) / 60, (uint)ptt % 60);
 
   free (info);
 }
@@ -837,8 +838,7 @@ static int print_playlists (rios_t *rio)
     if (!rio)
         return -EINVAL;
 
-    /* FIXME playlists show up as type RIO_FILETYPE_OTHER */
-    ret = return_flist_rio (rio, 0, RIO_FILETYPE_OTHER, &flist);
+    ret = return_flist_rio (rio, 0, RIO_FILETYPE_PLAYLIST, &flist);
     if (ret != URIO_SUCCESS)
         return ret;
 

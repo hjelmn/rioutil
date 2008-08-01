@@ -225,7 +225,9 @@ void close_rio (rios_t *rio) {
 
 int get_file_info_rio(rios_t *rio, rio_file_t *file, u_int8_t memory_unit, u_int16_t file_no) {
   int ret;
-  
+
+  debug("get_file_info_rio()");
+
   if (rio == NULL || file == NULL)
     return -EINVAL;
 

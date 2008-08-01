@@ -56,11 +56,11 @@ typedef struct _rio_file_list {
   char album[64];
   char name[64];
 
-  int bitrate;
+  uint bitrate;
   int samplerate;
   int mod_date;
   int size;
-  int time;
+  uint time;
 
   /* pointer to start of file in rio's memory. do not change */
   int start;
@@ -95,14 +95,14 @@ typedef struct _rio_playlist
 } rio_playlist_t;
 
 typedef struct _rio_device_mem {
-    u_int32_t size;
-    u_int32_t free;
+    uint size;
+    uint free;
     char name[32];
 
     flist_rio_t *files;
 
-    u_int32_t total_time;
-    u_int32_t num_files;
+    uint total_time;
+    uint num_files;
 } mem_list;
 
 typedef mem_list mlist_rio_t;
