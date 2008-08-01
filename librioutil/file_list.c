@@ -305,13 +305,28 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   return 0;
 }
 
+flist_rio_t* get_flist_rio (rios_t *rio, uint memory_unit, uint file_no )
+{
+    flist_rio_t *tmp;
+
+    if( !rio )
+        return -EINVAL;
+
+    for( tmp = rio->info.memory[memory_unit].files; tmp; tmp = tmp->next)
+    {
+        if( tmp->num == file_no )
+            return tmp;
+    }
+
+    warning("get_flist_rio: couldn't find file with num=%d", file_no);
+
+    return NULL;
+}
+
 int flist_get_file_id_rio (rios_t *rio, uint memory_unit, uint file_no) {
   flist_rio_t *tmp;
 
-  for (tmp = rio->info.memory[memory_unit].files ; tmp ; tmp = tmp->next) {
-    if (tmp->num == file_no)
-      break;
-  }
+  tmp = get_flist_rio (rio, memory_unit, file_no);
 
   if (tmp == NULL)
     return -1;
@@ -326,15 +341,12 @@ int flist_get_file_name_rio (rios_t *rio, uint memory_unit, uint file_no, char *
   flist_rio_t *tmp;
 
   if (file_namep == NULL)
-    return -1;
+    return -EINVAL;
 
-  for (tmp = rio->info.memory[memory_unit].files ; tmp ; tmp = tmp->next) {
-    if (tmp->num == file_no)
-      break;
-  }
+  tmp = get_flist_rio( rio, memory_unit, file_no );
 
   if (tmp == NULL)
-    return -1;
+    return -ENOENT;
 
   strncpy (file_namep, tmp->name, file_name_len);
 

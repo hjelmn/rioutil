@@ -174,12 +174,7 @@ int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist
     playlist->songs = songs;
     playlist->rio_num = file_num;
 
-    flist = rio->info.memory[memory_unit].files;
-    for( ; flist; flist = flist->next)
-    {
-        if( flist->num == file_num )
-            break;
-    }
+    flist = get_flist_rio( rio, memory_unit, file_num );
 
     strncpy( playlist->name, flist->title, sizeof(playlist->name) );
 
