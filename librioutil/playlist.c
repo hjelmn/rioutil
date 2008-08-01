@@ -141,14 +141,17 @@ int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist
     char *filename;
     uint *songs;
     uint nsongs;
+    flist_rio_t *flist;
 
-    trace("get_playlist_rio(rio=%x,memory_unit=%d,file_num=%d,playlist=%x)",
+    debug("get_playlist_rio(rio=%x,memory_unit=%d,file_num=%d,playlist=%x)",
 	  rio, memory_unit, file_num, playlist);
 
     if (!rio || !playlist)
 	return -EINVAL;
 
     filename = tempnam (NULL, "riopl");
+
+    debug("Playlist temp file = %s", filename);
 
     ret = download_file_rio (rio, memory_unit, file_num, filename);
     if (ret != URIO_SUCCESS)
@@ -159,10 +162,11 @@ int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist
 
     ret = read_playlist_file( filename, &songs, &nsongs );
     if (ret != URIO_SUCCESS)
-	{
-	    rio_log(rio, ret, "get_playlist_rio: read_playlist_file failed: %s\n", strerror(-ret));
-	    return ret;
-	}
+    {
+        error("get_playlist_rio: read_playlist_file failed: %s", strerror(-ret));
+        /* TODO check for file & delete it */
+        return ret;
+    }
 
     unlink (filename);
 
@@ -170,7 +174,16 @@ int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist
     playlist->songs = songs;
     playlist->rio_num = file_num;
 
-    debug( "get_playlist_rio: success.");
+    flist = rio->info.memory[memory_unit].files;
+    for( ; flist; flist = flist->next)
+    {
+        if( flist->num == file_num )
+            break;
+    }
+
+    strcpy( playlist->name, flist->title );
+
+    debug("get_playlist_rio: success (%d songs in playlist).", nsongs);
 
     return URIO_SUCCESS;
 }
