@@ -86,6 +86,14 @@ typedef struct _rio_file_list {
 
 typedef file_list flist_rio_t;
 
+typedef struct _rio_playlist
+{
+  char name[64];
+  uint nsongs; /* number of songs in the playlist */
+  uint *songs; /* array of song numbers */
+  uint rio_num; /* the internal file num of the playlist on the device */
+} rio_playlist_t;
+
 typedef struct _rio_device_mem {
     u_int32_t size;
     u_int32_t free;
@@ -215,7 +223,15 @@ int get_info_rio (rios_t *rio, rio_info_t **info);
 void set_progress_rio  (rios_t *rio, void (*f)(int x, int X, void *ptr), void *ptr);
 
 /* These only work with S-Series or newer Rios */
-int create_playlist_rio (rios_t *rio, char *name, int songs[], int memory_units[], int nsongs);
+int create_playlist_rio (rios_t *rio, char *name, uint songs[], uint memory_units[], uint nsongs);
+/* Get a playlist from the Rio (newer generation or all?)
+ *
+ * rio: a connected rio device
+ * memory_unit: the memory unit holding the playlist file
+ * file_num: file number of the playlist file
+ * playlist: playlist struct to fill
+ */
+int get_playlist_rio(rios_t *rio, uint memory_unit, uint file_num, rio_playlist_t *playlist);
 int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, char *filename);
 int return_serial_number_rio (rios_t *rio, u_int8_t serial_number[16]);
 

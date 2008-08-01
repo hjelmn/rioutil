@@ -31,8 +31,8 @@
 #include <sys/uio.h>
 #include <sys/stat.h>
 
+#include "playlist_file.h"
 #include "rioi.h"
-
 #include "riolog.h"
 
 #ifdef HAVE_LIBGEN_H
@@ -43,138 +43,185 @@
 #define PATH_MAX 255
 #endif
 
+
 int new_playlist_info (info_page_t *newInfo, char *name);
 int playlist_info (info_page_t *newInfo, char *file_name);
 
-int create_playlist_rio (rios_t *rio, char *name, int songs[], int memory_units[], int nsongs) {
-  info_page_t info;
-  int error, addpipe, i, tmpi;
-  char filename[PATH_MAX];
-  file_list *tmp;
-  FILE *fh;
+int create_playlist_rio (rios_t *rio, char *name, uint songs[], uint memory_units[], uint nsongs) {
+    info_page_t info;
+    int error, addpipe;
+    uint i; /* loop counter */
+    char filename[PATH_MAX]; /* filename of temp file */
+    file_list *tmp;
+    uint *rio_num;
+    u_int8_t **sflags;
 
-  trace("create_playlist_rio()");
+    trace("create_playlist_rio()");
 
-  if (!rio || !name || !songs || !memory_units)
-    return -EINVAL;
+    if (!rio || !name || !songs || !memory_units)
+	return -EINVAL;
 
-  /* Current implementation only works for S-Series and newer. For
-     older, upload a .lst file. */
-  if (return_generation_rio (rio) < 4)
-    return -EPERM;
+    /* Current implementation only works for S-Series and newer. For
+       older, upload a .lst file. */
+    if (return_generation_rio (rio) < 4)
+	return -EPERM;
   
-  if (try_lock_rio (rio) != 0)
-    return -EBUSY;
+    rio_num = calloc( nsongs, sizeof(uint) );
+    sflags = calloc( nsongs, 3 * sizeof(u_int8_t) );
+    if (rio_num == NULL || sflags == NULL)
+    {
+        error("calloc() failed!");
+        return -ENOMEM;
+    }
 
-  rio_log (rio, 0, "create_playlist_rio: creating a new playlist %s.\n", name);
+    if (try_lock_rio (rio) != 0)
+	return -EBUSY;
 
-  /* Create a temporary file to store the new playlist */
-  snprintf (filename, PATH_MAX, "/tmp/rioutil_%s.%08x.lst", name, time (NULL));
-  fh = fopen (filename, "w");
-  if (fh == 0)
-    UNLOCK(-errno);
-  fprintf (fh, "FIDLST%c%c%c", 1, 0, 0);
-  tmpi = arch32_2_little32(nsongs);
-  fwrite (&tmpi, 1, 3, fh);
+    debug("create_playlist_rio: creating a new playlist %s.", name);
 
-  for (i = 0 ; i < nsongs ; i++) {
-    rio_log (rio, 0, "Adding for song %i to playlist %s...\n", songs[i], name);
-    for (tmp = rio->info.memory[memory_units[i]].files ; tmp ; tmp = tmp->next)
-      if (tmp->num == songs[i])
-        break;
+    /* Create a temporary file to store the new playlist */
+    snprintf (filename, PATH_MAX, "/tmp/rioutil_%s.%08x.lst", name, (uint) time(NULL));
+    for (i = 0 ; i < nsongs ; i++)
+    {
+	for (tmp = rio->info.memory[memory_units[i]].files ; tmp ; \
+             tmp = tmp->next)
+	    if (tmp->num == songs[i])
+		break;
 
-    if (tmp == NULL)
-      continue;
+	if (tmp == NULL)
+	    continue;
 
-    tmpi = arch32_2_little32(tmp->rio_num);
-    fwrite (&tmpi, 1, 3, fh);
-    fwrite (tmp->sflags, 3, 1, fh);
-  }
+        rio_num[i] = tmp->rio_num;
+        sflags[i] = tmp->sflags;
+    }
 
-  fclose (fh);
+    error = write_playlist_file( filename, rio_num, sflags, nsongs );
+    if (error != URIO_SUCCESS)
+        UNLOCK(error);
 
-  error = new_playlist_info (&info, name);
-  if (error != URIO_SUCCESS)
-    UNLOCK(error);
 
-  if ((addpipe = open(filename, O_RDONLY)) == -1)
-    UNLOCK(-1);
+    error = new_playlist_info (&info, name);
+    if (error != URIO_SUCCESS)
+	UNLOCK(error);
 
-  /* i moved the major functionality of both add_file and add_song down a layer */
-  if ((error = do_upload (rio, 0, addpipe, info, 0)) != URIO_SUCCESS) {
-    free (info.data);
+    if ((addpipe = open(filename, O_RDONLY)) == -1)
+	UNLOCK(-1);
+
+    /* i moved the major functionality of both add_file and add_song down a layer */
+    error = do_upload (rio, 0, addpipe, info, 0);
+    if (error != URIO_SUCCESS)
+    {
+	free (info.data);
+
+	close (addpipe);
+
+	/* make sure no malicious user has messed with this variable */
+	if (strstr (filename, "/tmp/rioutil_") == filename)
+	    unlink (filename);
+
+	UNLOCK(error);
+    }
 
     close (addpipe);
 
-    /* make sure no malicious user has messed with this variable */
     if (strstr (filename, "/tmp/rioutil_") == filename)
-      unlink (filename);
+	unlink (filename);
 
-    UNLOCK(error);
-  }
+    free (info.data);
 
-  close (addpipe);
+    rio_log (rio, 0, "add_file_rio: copy complete.\n");
 
-  if (strstr (filename, "/tmp/rioutil_") == filename)
+    UNLOCK(URIO_SUCCESS);
+}
+
+/* Public API function */
+int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist_t *playlist )
+{
+    int ret;
+    char *filename;
+    uint *songs;
+    uint nsongs;
+
+    trace("get_playlist_rio(rio=%x,memory_unit=%d,file_num=%d,playlist=%x)",
+	  rio, memory_unit, file_num, playlist);
+
+    if (!rio || !playlist)
+	return -EINVAL;
+
+    filename = tempnam (NULL, "riopl");
+
+    ret = download_file_rio (rio, memory_unit, file_num, filename);
+    if (ret != URIO_SUCCESS)
+    {
+	error("get_playlist_rio: downloading failed: %d", ret);
+        return ret;
+    }
+
+    ret = read_playlist_file( filename, &songs, &nsongs );
+    if (ret != URIO_SUCCESS)
+	{
+	    rio_log(rio, ret, "get_playlist_rio: read_playlist_file failed: %s\n", strerror(-ret));
+	    return ret;
+	}
+
     unlink (filename);
 
-  free (info.data);
+    playlist->nsongs = nsongs;
+    playlist->songs = songs;
+    playlist->rio_num = file_num;
 
-  rio_log (rio, 0, "add_file_rio: copy complete.\n");
+    debug( "get_playlist_rio: success.");
 
-  UNLOCK(URIO_SUCCESS);
+    return URIO_SUCCESS;
 }
+
 
 
 /*
   playlist_info:
 */
 int playlist_info (info_page_t *newInfo, char *file_name) {
-  rio_file_t *playlist_file;
-  int fnum;
+    rio_file_t *playlist_file;
+    int fnum;
 
-  trace("playlist_info()");
+    if (!newInfo || !file_name)
+	return -EINVAL;
 
-  if (!newInfo || !file_name)
-    return -EINVAL;
+    playlist_file = malloc(sizeof(rio_file_t));
+    if (playlist_file == NULL)
+	return -ENOMEM;
 
-  playlist_file = malloc(sizeof(rio_file_t));
-  if (playlist_file == NULL)
-    return -ENOMEM;
+    sscanf(file_name, "Playlist%02d.lst", &fnum);
 
-  sscanf(file_name, "Playlist%02d.lst", &fnum);
+    sprintf((char *)playlist_file->title, "Playlist %02d", fnum);
 
-  sprintf((char *)playlist_file->title, "Playlist %02d", fnum);
+    playlist_file->bits = 0x21000590; /* playlist bits + file bits + download bit */
 
-  playlist_file->bits = 0x21000590; /* playlist bits + file bits + download bit */
+    newInfo->skip = 0;
+    newInfo->data = playlist_file;
 
-  newInfo->skip = 0;
-  newInfo->data = playlist_file;
-
-  return URIO_SUCCESS;
+    return URIO_SUCCESS;
 }
 
 /* Playlists for S-Series and newer. */
 int new_playlist_info (info_page_t *newInfo, char *name)
 {
-  rio_file_t *playlist_file;
+    rio_file_t *playlist_file;
 
-  trace("new_playlist_info()");
+    if (!newInfo || !name)
+	return -EINVAL;
 
-  if (!newInfo || !name)
-    return -EINVAL;
+    playlist_file = malloc(sizeof(rio_file_t));
+    if (playlist_file == NULL)
+	return -ENOMEM;
 
-  playlist_file = malloc(sizeof(rio_file_t));
-  if (playlist_file == NULL)
-    return -ENOMEM;
+    snprintf((char *)playlist_file->title, 64, "%s", name);
 
-  snprintf((char *)playlist_file->title, 64, "%s", name);
+    playlist_file->bits = 0x11000110;
+    playlist_file->type = TYPE_PLS;
 
-  playlist_file->bits = 0x11000110;
-  playlist_file->type = TYPE_PLS;
+    newInfo->skip = 0;
+    newInfo->data = playlist_file;
 
-  newInfo->skip = 0;
-  newInfo->data = playlist_file;
-
-  return URIO_SUCCESS;
+    return URIO_SUCCESS;
 }

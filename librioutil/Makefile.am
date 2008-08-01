@@ -22,7 +22,8 @@ lib_LTLIBRARIES = librioutil.la
 
 librioutil_la_SOURCES = rio.c rioio.c mp3.c downloadable.c \
 			byteorder.c song_management.c cksum.c util.c \
-			log.c playlist.c id3.c  file_list.c $(DRIVER)
+			log.c playlist_file.c playlist.c id3.c \
+                        file_list.c $(DRIVER)
 
 librioutil_la_LDFLAGS = -version-info 6:0:5 $(PREBIND_FLAGS)
 
