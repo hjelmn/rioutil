@@ -34,6 +34,7 @@
 #include <sys/time.h>
 
 #include "rioi.h"
+#include "riolog.h"
 
 #if defined (HAVE_LIBGEN_H)
 #include <libgen.h>
@@ -406,10 +407,11 @@ int return_flist_rio (rios_t *rio, u_int8_t memory_unit, rio_filetype list_flags
   flist_rio_t *head = NULL;
   int first = 1, ret;
 
-  rio_log (rio, 0, "return_flist_rio: entering...\n");
-  
+  debug("return_flist_rio(rio=%x,memory_unit=%d,list_flags=%x,flist=%x)", \
+        rio, memory_unit, list_flags, flist);
+
   if (rio == NULL || memory_unit >= MAX_MEM_UNITS || flist == NULL) {
-    rio_log (rio, -EINVAL, "return_flist_rio: invalid argument.\n");
+    error("return_flist_rio: invalid argument.");
 
     return -EINVAL;
   }
@@ -424,11 +426,13 @@ int return_flist_rio (rios_t *rio, u_int8_t memory_unit, rio_filetype list_flags
     if (list_flags & tmp->type)
     {
       if ((bflist = malloc(sizeof(flist_rio_t))) == NULL) {
-	rio_log (rio, errno, "return_flist_rio: malloc returned an error (%s).\n", strerror (errno));
+	error("return_flist_rio: malloc returned an error (%s).", strerror (errno));
 
 	return -errno;
       }
-      
+
+      debug("Adding file to list: %d: %s", tmp->rio_num, tmp->name);
+
       *(bflist) = *(tmp);
       
       bflist->prev = prev;
@@ -448,9 +452,9 @@ int return_flist_rio (rios_t *rio, u_int8_t memory_unit, rio_filetype list_flags
   
   *flist = head;
 
-  rio_log (rio, 0, "return_flist_rio: complete\n");
+  debug("return_flist_rio: success");
 
-  return 0;
+  return URIO_SUCCESS;
 }
 
 int size_flist_rio (rios_t *rio, int memory_unit) {
