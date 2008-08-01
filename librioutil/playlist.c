@@ -181,7 +181,7 @@ int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist
             break;
     }
 
-    strcpy( playlist->name, flist->title );
+    strncpy( playlist->name, flist->title, sizeof(playlist->name) );
 
     debug("get_playlist_rio: success (%d songs in playlist).", nsongs);
 
