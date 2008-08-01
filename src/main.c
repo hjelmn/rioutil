@@ -76,7 +76,7 @@ static int pipe_upload (rios_t *rio, int mem_unit, char *title, char *album, cha
 static int add_tracks (rios_t *rio);
 static int download_tracks (rios_t *rio, char *copt, u_int32_t mem_unit);
 static int delete_tracks (rios_t *rio, char *dopt, u_int32_t mem_unit);
-
+static int print_playlists (rios_t *rio);
 
 /* prototypes for modifying this driver's upload stack */
 static struct upload_stack upstack = {NULL, NULL};
@@ -115,6 +115,7 @@ int main (int argc, char *argv[]) {
     {"delete",    required_argument, 0,    'd'},
     {"debug",     no_argument,       0,    'e'},
     {"format",    no_argument,       0,    'f'},
+    {"get-playlist", no_argument,    0,    'g'},
     {"help",      no_argument,       0,    'h'},
     {"info",      no_argument,       0,    'i'},
     {"playlist",  no_argument,       0,    'j'},
@@ -166,6 +167,7 @@ int main (int argc, char *argv[]) {
     case 'l':
     case 'p':
     case 'e':
+    case 'g':
       if (flags[c - 'a'] < 255)
 	flags[c - 'a'] ++;
       
@@ -217,7 +219,8 @@ int main (int argc, char *argv[]) {
     fprintf (stderr, "Playlist and overwrite commands can not be used with any other commands.\n");
     exit (EXIT_FAILURE);
   }
-  
+
+    
 
   /* open the player */
   if (flags[5] || flags[20]) {
@@ -269,6 +272,12 @@ int main (int argc, char *argv[]) {
 
     if (flags[11]) {
       new_printfiles (&rio, mem_unit);
+      num_command_flags--;
+    }
+
+    if (flags[6])
+    {
+      print_playlists (&rio);
       num_command_flags--;
     }
   }
@@ -815,6 +824,44 @@ static int overwrite_file (rios_t *rio, int mem_unit, int argc, char *argv[]) {
     printf (" Complete\n");
 
   return ret;
+}
+
+static int print_playlists (rios_t *rio)
+{
+    flist_rio_t *flist, *f;
+    rio_playlist_t playlist;
+    unsigned int i, playlist_count = 0;
+    int ret;
+
+    if (!rio)
+        return -EINVAL;
+
+    /* FIXME playlists show up as type RIO_FILETYPE_OTHER */
+    ret = return_flist_rio (rio, 0, RIO_FILETYPE_OTHER, &flist);
+    if (ret != URIO_SUCCESS)
+        return ret;
+
+    printf("Playlists:\n\n");
+
+    for (f = flist; f; f = f->next)
+    {
+        playlist_count++;
+
+        ret = get_playlist_rio (rio, 0, f->num, &playlist);
+        if (ret != URIO_SUCCESS)
+            continue;
+
+        printf("  %s\n", playlist.name);
+        for (i = 0; i < playlist.nsongs; i++)
+            printf("    %d\n", playlist.songs[i]); /* TODO print song name */
+    }
+
+    free_flist_rio (flist);
+    flist = NULL;
+
+    printf ("Total playlists: %d\n", playlist_count);
+
+    return URIO_SUCCESS;
 }
 
 static void print_version (void) {
