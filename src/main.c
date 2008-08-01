@@ -53,7 +53,7 @@
 /* a simple version of basename that returns a pointer into x where the basename
    begins or NULL if x has a trailing slash. */
 static char *basename_simple (char *x){
-  int i;
+  size_t i;
  
   for (i = strlen(x) - 1 ; x[i] != '/'; i--);
 
@@ -68,8 +68,8 @@ static void print_version (void);
 
 static void progress (int x, int X, void *ptr);
 static void progress_no_tty (int x, int X, void *ptr);
-static void new_printfiles (rios_t *rio, int mem_unit);
-static void print_info (rios_t *rio, int mem_unit);
+static void new_printfiles (rios_t *rio);
+static void print_info (rios_t *rio);
 static int create_playlist (rios_t *rio, int argc, char *argv[]);
 static int overwrite_file (rios_t *rio, int mem_unit, int argc, char *argv[]);
 static int pipe_upload (rios_t *rio, int mem_unit, char *title, char *album, char *artist);
@@ -96,13 +96,14 @@ static void aborttransfer (int sigraised) {
 
 
 int main (int argc, char *argv[]) {
-  int i, c, ret;
+  int c, ret;
+  uint i;
 
   unsigned char flags[27];
   char *flag_args[26];
   char command_flags[] = {0, 2, 3, 5, 6, 8, 9, 11, 13, 15, 20, 26, -1};
 
-  int num_command_flags = 0;
+  uint num_command_flags = 0;
   unsigned int mem_unit = 0;
   long int dev;
 
@@ -266,12 +267,12 @@ int main (int argc, char *argv[]) {
   if (flags[25] == 0) {
     /* neither device nor file info is available when formating or upgrading */
     if (flags[8]) {
-      print_info (&rio, mem_unit);
+      print_info (&rio);
       num_command_flags--;
     }
 
     if (flags[11]) {
-      new_printfiles (&rio, mem_unit);
+      new_printfiles (&rio);
       num_command_flags--;
     }
 
@@ -366,7 +367,7 @@ static int pipe_upload (rios_t *rio, int mem_unit, char *title, char *album, cha
 
   sprintf (&file_name[strlen(file_name)], ".mp3");
 
-  fd = open (file_name, O_WRONLY | O_CREAT, 0644);
+  fd = open (file_name, O_WRONLY | O_CREAT | O_EXCL, 0644);
   if (fd < 0) {
     fprintf (stderr, "rioutil/pipe_upload: could not create a temporary file: %s\n", strerror (errno));
 
@@ -567,16 +568,16 @@ static int intwidth(int i) {
   return ((j > 10) ? 10 : j);
 }
 
-static void new_printfiles(rios_t *rio, int mem_unit) {
+static void new_printfiles(rios_t *rio) {
   flist_rio_t *tmpf;
   int j;
   int id_width;
   int size_width;
   int minutes_width;
   int header_width;
-  int max_title_width = strlen("Title");
-  int max_name_width = strlen("Name");
-  int max_id = 0;
+  size_t max_title_width = strlen("Title");
+  size_t max_name_width = strlen("Name");
+  uint max_id = 0;
   int max_size = 0;
   int max_time = 0;
   int num_mem_units;
@@ -652,7 +653,7 @@ static void new_printfiles(rios_t *rio, int mem_unit) {
   printf ("\n");
 }
 
-static void print_info(rios_t *rio, int mem_unit) {
+static void print_info(rios_t *rio) {
   int i, j, ticks, ttime, type, ret;
   int num_mem_units;
   int nfiles = 0;
@@ -779,7 +780,7 @@ static void print_info(rios_t *rio, int mem_unit) {
 static int create_playlist (rios_t *rio, int argc, char *argv[]) {
   int nsongs = argc - optind - 1;
   int i, ret;
-  int *mems, *songs;
+  uint *mems, *songs;
 
   if (nsongs < 1) {
     fprintf (stderr, "No songs to add!\n");
@@ -794,7 +795,7 @@ static int create_playlist (rios_t *rio, int argc, char *argv[]) {
   optind++;
 
   for (i = 0 ; i < nsongs ; i++) {
-    sscanf (argv[optind+i], "%d,%d", &mems[i], &songs[i]);
+    sscanf (argv[optind+i], "%u,%u", &mems[i], &songs[i]);
   }
 
   ret = create_playlist_rio (rio, argv[optind-1], songs, mems, nsongs);

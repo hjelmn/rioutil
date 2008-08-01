@@ -856,9 +856,9 @@ int update_info_rio (rios_t *rio) {
 
   returns to total number of memory units an instance has.
 */
-int return_mem_units_rio (rios_t *rio) {
+uint return_mem_units_rio (rios_t *rio) {
   if (rio == NULL)
-    return -EINVAL;
+    return 0;
   
   return rio->info.total_memory_units;
 }

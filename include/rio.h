@@ -251,7 +251,7 @@ char *return_conn_method_rio(void);
   all memory sizes are in KB
 */
 /* Returns the number of memory units on the device */
-int return_mem_units_rio (rios_t *rio);
+uint return_mem_units_rio (rios_t *rio);
 int return_free_mem_rio (rios_t *rio, u_int8_t memory_unit);
 int return_used_mem_rio (rios_t *rio, u_int8_t memory_unit);
 int return_total_mem_rio (rios_t *rio, u_int8_t memory_unit);
