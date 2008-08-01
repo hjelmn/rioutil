@@ -24,15 +24,17 @@
 #ifndef RIOLOG_H
 #define RIOLOG_H
 
+#include <stdio.h>
 
-#define trace(msg, args...) riolog( 2, msg, ## args )
-#define debug(msg, args...) riolog( 1, msg, ## args )
-#define error(msg, args...) riolog( 0, msg, ## args )
+#define trace(...)   riolog( 2, __VA_ARGS__ )
+#define debug(...)   riolog( 1, __VA_ARGS__ )
+#define warning(...) riolog( 0, __VA_ARGS__ )
+#define error(...)   riolog( 0, __VA_ARGS__ )
 
 /**
  * Set the logging verbosity
  */
-void set_debug_level(uint new_debug_level);
+void set_debug_level(unsigned int new_debug_level);
 
 /**
  * Set the file pointer to log to
@@ -42,7 +44,7 @@ void set_debug_out(FILE *out);
 /**
  * Log a message
  */
-void riolog( uint level, char *format, ... );
+void riolog( unsigned int level, char *format, ... );
 
 
 #endif /* RIOLOG_H */
