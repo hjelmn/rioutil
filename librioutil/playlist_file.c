@@ -93,7 +93,7 @@ static struct rio_playlist_file_entry rio_playlist_file_entry_create( const uint
 
 static uint rio_num( struct rio_playlist_file_entry entry )
 {
-    return entry.rio_num_2 << 16 || entry.rio_num_1 << 8 || entry.rio_num_0;
+    return entry.rio_num_2 << 16 | entry.rio_num_1 << 8 | entry.rio_num_0;
 }
 
 
@@ -105,7 +105,7 @@ int read_playlist_file ( const char *filename, uint **songs, uint *nsongs )
     int read;
     uint i;
 
-    trace("read_playlist_file(filename=%s,songs=%x,nsongs=%x)", \
+    debug("read_playlist_file(filename=%s,songs=%x,nsongs=%x)", \
           filename, songs, nsongs);
 
     if (!filename || !songs || !nsongs)
@@ -136,6 +136,7 @@ int read_playlist_file ( const char *filename, uint **songs, uint *nsongs )
     if (!*songs)
     {
 	fclose(file);
+        error("malloc() failed!");
 	return -ENOMEM;
     }
 
@@ -143,6 +144,7 @@ int read_playlist_file ( const char *filename, uint **songs, uint *nsongs )
     while ( fread(&entry, sizeof(entry), 1, file) && i < *nsongs )
     {
         (*songs)[i] = rio_num( entry );
+        debug("Read playlist entry: rio_num=%d", (*songs)[i]);
         i++;
     }
 
@@ -164,7 +166,7 @@ int read_playlist_file ( const char *filename, uint **songs, uint *nsongs )
 
     fclose( file );
 
-    trace("read_playlist_file(): Success");
+    debug("read_playlist_file(): Success");
 
     return URIO_SUCCESS;
 }
