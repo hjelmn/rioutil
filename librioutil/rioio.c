@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include "rioi.h"
+#include "riolog.h"
 #include "driver.h"
 
 int read_block_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, u_int32_t block_size) {
@@ -44,7 +45,7 @@ int read_block_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, u_int32_t b
   if (ret < 0)
     return ret;
 
-  rio_log_data (rio, "In", buffer, size);
+  rio_log_data ("In", buffer, size);
   
   return URIO_SUCCESS;
 }
@@ -69,7 +70,7 @@ int write_cksum_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, char *cksu
   if (ret < 0)
     return ret;
   
-  rio_log_data (rio, "Out", rio->buffer, 64);
+  rio_log_data ("Out", rio->buffer, 64);
 
   return URIO_SUCCESS;
 }
@@ -83,7 +84,7 @@ int write_block_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, char *cksu
   if (cksum_hdr != NULL) {
     if (rio->abort) {
       rio->abort = 0;
-      rio_log (rio, 0, "librioutil/rioio.c write_block_rio: recieved abort. aborting transfer\n");
+      debug("rioio.c write_block_rio: recieved abort. aborting transfer");
       return -EINTR;
     }
 
@@ -96,7 +97,7 @@ int write_block_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, char *cksu
   if (ret < 0)
     return ret;
   
-  rio_log_data (rio, "Out", ptr, size);
+  rio_log_data ("Out", ptr, size);
   
   if (cksum_hdr != NULL)
     usleep(1000);
@@ -106,10 +107,10 @@ int write_block_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, char *cksu
     return ret;
   
   if ( (cksum_hdr) && strstr(cksum_hdr, "CRIODATA") && (strstr((char *)rio->buffer, "SRIODATA") == NULL) ) {
-    rio_log (rio, -EIO, "librioutil/rioio.c write_block_rio: second SRIODATA not found\n");
+    error("rioio.c write_block_rio: second SRIODATA not found");
     return -EIO;
   }
-  
+
   return URIO_SUCCESS;
 }
 
@@ -124,18 +125,17 @@ int send_command_rio (rios_t *rio, int request, int value, int index) {
   if (cretry > 3)
     return -ENODEV;
   
-  if (rio->debug > 1)
-    rio_log (rio, 0, "librioutil/rioio.c send_command_rio: sending command: len: 0x0c rt: 0x00 rq: 0x%02x va: 0x%04x id: 0x%04x\n", 
+  riolog (4, "rioio.c send_command_rio: sending command: len: 0x0c rt: 0x00 rq: 0x%02x va: 0x%04x id: 0x%04x", 
 	     request, value, index);
 
   if (control_msg(rio, request, value, index, 0x0c, rio->cmd_buffer) < 0)
     return -ENODEV;
   
-  rio_log_data (rio, "Command", rio->cmd_buffer, 0xc);
+  rio_log_data ("Command", rio->cmd_buffer, 0xc);
 
   if (rio->cmd_buffer[0] != 0x1 && request != 0x66 && request != 0x61) {
     cretry++;
-    rio_log (rio, -1, "librioutil/rioio.c send_command_rio: device did not respond to command. retrying...");
+    error("rioio.c send_command_rio: device did not respond to command. retrying...");
 
     ret = send_command_rio (rio, request, value, index);
 
@@ -156,7 +156,7 @@ int abort_transfer_rio(rios_t *rio) {
   if (ret < 0)
     return ret;
 
-  rio_log_data (rio, "Out", rio->buffer, 64);
+  rio_log_data ("Out", rio->buffer, 64);
   
   return URIO_SUCCESS;
 }

@@ -23,6 +23,7 @@
 #include <usb.h>
 
 #include "driver.h"
+#include "riolog.h"
 
 char driver_method[] = "libusb";
 
@@ -37,6 +38,8 @@ int usb_open_rio (rios_t *rio, int number) {
 
   struct usb_device *plyr_device = NULL;
 
+  debug("usb_open_rio(rio=%x,number=%d)", rio, number);
+
   usb_init();
 
   usb_find_busses();
@@ -45,8 +48,8 @@ int usb_open_rio (rios_t *rio, int number) {
   /* find a suitable device based on device table and player number */
   for (bus = usb_busses ; bus && !plyr_device ; bus = bus->next)
     for (dev = bus->devices ; dev && !plyr_device; dev = dev->next) {
-      rio_log (rio, 0, "USB Device: idVendor = %08x, idProduct = %08x\n", dev->descriptor.idVendor,
-	       dev->descriptor.idProduct);
+      debug("USB Device: idVendor = %08x, idProduct = %08x", \
+            dev->descriptor.idVendor, dev->descriptor.idProduct);
 
       for (p = &player_devices[0] ; p->vendor_id && !plyr_device ; p++) {
 	if (dev->descriptor.idVendor == p->vendor_id && dev->descriptor.idProduct == p->product_id &&
@@ -84,7 +87,7 @@ int usb_open_rio (rios_t *rio, int number) {
 
   rio->dev    = (void *)plyr;
 
-  rio_log (rio, 0, "Rio device ready\n");
+  debug("usb_open_rio(): Success");
 
   return 0;
 }
@@ -143,8 +146,8 @@ int read_bulk(rios_t *rio, unsigned char *buffer, u_int32_t buffer_size){
 
   ret = usb_bulk_read(ud, read_ep, (char *)buffer, buffer_size, 8000);
   if (ret < 0) {
-    rio_log (rio, ret, "error reading from device (%i). resetting..\n", ret);
-    rio_log (rio, ret, "size = %i\n", buffer_size);
+      error("error reading from device (%i). size = %i. resetting..\n", ret, buffer_size);
+
     usb_reset (ud);
   }
   

@@ -67,6 +67,7 @@ struct player_device_info player_devices[] = {
 /* statically defined functions */
 static int set_time_rio (rios_t *rio);
 static int return_intrn_info_rio(rios_t *rio);
+static void free_info_rio (rios_t *rio);
 
 /* read the supported file types from the rio */
 static int read_ftypes_rio (rios_t *rio) {
@@ -99,7 +100,7 @@ int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
   set_debug_out( stderr );
   set_debug_level( debug );
 
-  trace("open_rio(rio=%x,number=%d,debug=%d,fill_structures=%d)", \
+  debug("open_rio(rio=%x,number=%d,debug=%d,fill_structures=%d)", \
 	rio, number, debug, fill_structures);
 
   if (rio == NULL)
@@ -112,9 +113,8 @@ int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
   
   debug("creating new rio instance. device: 0x%08x", number);
 
-  if (debug) {
-    rio_log (rio, 0, "open_rio: setting usb driver verbosity level to %i\n",
-	     debug);
+  if (debug > 2) {
+    debug("open_rio: setting usb driver verbosity level to %i", debug);
 
     usb_setdebug(debug);
   }
@@ -123,9 +123,7 @@ int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
   
   /* open the USB device (this calls the underlying driver) */
   if ((ret = usb_open_rio (rio, number)) != 0) {
-    rio_log (rio, ret, "open_rio: could not open a Rio device\n");
-
-    error("could not open a Rio device: %d", ret);
+    error("open_rio: could not open a Rio device: %d", ret);
 
     return ret;
   }
@@ -154,7 +152,7 @@ int open_rio (rios_t *rio, int number, int debug, int fill_structures) {
     }
   }
 
-  rio_log (rio, 0, "open_rio: new rio instance created.\n");
+  debug("open_rio: new rio instance created.");
 
   return URIO_SUCCESS;
 }
@@ -180,7 +178,7 @@ static int set_time_rio (rios_t *rio) {
   gettimeofday (&tv, &tz);
   tmp = localtime ((const time_t *)&(tv.tv_sec));
 
-  rio_log (rio, 0, "librioutil/rio.c set_time_rio: Setting device time from system clock: %s\n", asctime(tmp));
+  debug("rio.c set_time_rio: Setting device time from system clock: %s", asctime(tmp));
 
   curr_time = tv.tv_sec - 60 * tz.tz_minuteswest;
   
@@ -207,7 +205,7 @@ void close_rio (rios_t *rio) {
   if (try_lock_rio (rio) != 0)
     return;
   
-  rio_log (rio, 0, "close_rio: entering...\n");
+  debug("close_rio: entering...");
 
   (void)wake_rio (rio);
   
@@ -220,7 +218,7 @@ void close_rio (rios_t *rio) {
 
   unlock_rio (rio);
   
-  rio_log (rio, 0, "close_rio: complete\n");
+  debug("close_rio: complete");
 }
 
 int get_file_info_rio(rios_t *rio, rio_file_t *file, u_int8_t memory_unit, u_int16_t file_no) {
@@ -275,7 +273,7 @@ int generate_mem_list_rio (rios_t *rio) {
 
   mlist_rio_t *list = rio->info.memory;
 
-  rio_log (rio, 0, "create_mem_list_rio: entering...\n");
+  debug("create_mem_list_rio: entering...");
 
   memset(list, 0, sizeof(mlist_rio_t) * MAX_MEM_UNITS);
 
@@ -319,7 +317,7 @@ int generate_mem_list_rio (rios_t *rio) {
     }
   }
 
-  rio_log (rio, 0, "create_mem_list_rio: complete\n");
+  debug("create_mem_list_rio: complete");
 
   return URIO_SUCCESS;
 }
@@ -385,14 +383,14 @@ static int get_device_prefs_rio (rios_t *rio, rio_info_t *infop) {
   /* iTunes sends this set of commands before RIO_PREFR */
   ret = send_command_rio(rio, RIO_PREFR, 0, 0);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, -1, "get_device_prefs_rio: rio did not respond to read preferences command.\n");    
+    error("get_device_prefs_rio: rio did not respond to read preferences command.");
 
     return ret;
   }
 
   ret = read_block_rio (rio, buffer, RIO_MTS, RIO_FTS);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "return_info_rio: error reading preference data\n");
+    error("return_info_rio: error reading preference data");
 
     return ret;
   }
@@ -474,7 +472,7 @@ static int return_intrn_info_rio(rios_t *rio) {
   /* retrieve serial number and firmware version */
   ret = get_device_description_rio (rio, &rio->info);
   if (ret < 0) {
-    rio_log (rio, ret, "librioutil/rio.c return_intrn_info_rio: error reading device description\n");
+    error("rio.c return_intrn_info_rio: error reading device description.");
 
     UNLOCK(ret);
   }
@@ -485,7 +483,7 @@ static int return_intrn_info_rio(rios_t *rio) {
   /* generate internal file ane memory lists */
   ret = generate_mem_list_rio(rio);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "librioutil/rio.c return_intrn_info_rio: could not generate memory/file listing\n");
+    error("rio.c return_intrn_info_rio: could not generate memory/file listing");
 
     UNLOCK(ret);
   }
@@ -526,14 +524,14 @@ int set_info_rio(rios_t *rio, rio_info_t *info) {
   
   ret = send_command_rio(rio, RIO_PREFR, 0, 0);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "set_info_rio: error sending read preferences command\n");
+    error("set_info_rio: error sending read preferences command: %d", ret);
 
     UNLOCK(ret);
   }
   
   ret = read_block_rio(rio, (unsigned char *)&pref_buf, RIO_MTS, RIO_FTS);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "set_info_rio: error reading preference data\n");
+    error("set_info_rio: error reading preference data: %d", ret);
 
     UNLOCK(ret);
   }
@@ -542,20 +540,20 @@ int set_info_rio(rios_t *rio, rio_info_t *info) {
   
   ret = send_command_rio(rio, RIO_PREFS, 0, 0);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "set_info_rio: error sending set preferences command\n");
+    error("set_info_rio: error sending set preferences command: %d", ret);
 
     UNLOCK(ret);
   }
 
   ret = read_block_rio(rio, NULL, 64, RIO_FTS);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "set_info_rio: error reading from device\n");
-    
+    error("set_info_rio: error reading from device: %d", ret);
+
     UNLOCK(ret);
   }
 
   if ((ret = write_block_rio(rio, (unsigned char *)&pref_buf, RIO_MTS, NULL)) != URIO_SUCCESS)
-    rio_log (rio, ret, "set_info_rio: error writing preferences\n");
+    error("set_info_rio: error writing preferences: %d", ret);
 
   UNLOCK(ret);
 }
@@ -607,7 +605,7 @@ int format_mem_rio (rios_t *rio, u_int8_t memory_unit) {
   if ((ret = try_lock_rio (rio)) != 0)
     return ret;
 
-  rio_log (rio, 0, "librioutil/rio.c format_mem_rio: erasing memory unit %i\n", memory_unit);
+  debug("rio.c format_mem_rio: erasing memory unit %i", memory_unit);
 
   /* don't need to call wake_rio here */
 
@@ -631,7 +629,7 @@ int format_mem_rio (rios_t *rio, u_int8_t memory_unit) {
       /* format operation completed successfully */
       break;
     } else {
-      rio_log (rio, -1, "librioutil/rio.c format_mem_rio: erase failed\n");
+      error("librioutil/rio.c format_mem_rio: erase failed");
 
       UNLOCK(-1);
     }
@@ -640,7 +638,7 @@ int format_mem_rio (rios_t *rio, u_int8_t memory_unit) {
   if (rio->progress)
     rio->progress (1, 1, rio->progress_ptr);
 
-  rio_log (rio, 0, "librioutil/rio.c format_mem_rio: erase complete\n");
+  debug("rio.c format_mem_rio: erase complete");
 
   UNLOCK(URIO_SUCCESS);
 }
@@ -651,7 +649,7 @@ int format_mem_rio (rios_t *rio, u_int8_t memory_unit) {
   Update the firmware on a Rio. Function supports all rioutil supported players.
 */
 int update_rio (rios_t *rio, char *file_name) {
-  rio_log (rio, 0, "update_rio: function depricated. use firmware_upgrade_rio instead.\n");
+  warning("update_rio: function deprecated. use firmware_upgrade_rio instead.");
 
   return firmware_upgrade_rio (rio, file_name);
 }
@@ -675,13 +673,13 @@ int firmware_upgrade_rio (rios_t *rio, char *file_name) {
 
   size = statinfo.st_size;
 
-  rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: updating firmware of generation %d rio...\n",
+  debug("rio.c firmware_upgrade_rio: updating firmware of generation %d rio...",
 	   player_generation);
   
   (void)wake_rio(rio);
 
   /* some upgrades require that the memory unit be erased */
-  rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: formatting internal memory\n");
+  debug("rio.c firmware_upgrade_rio: formatting internal memory");
   if ((ret = format_mem_rio (rio, 0)) != URIO_SUCCESS)
     UNLOCK(ret);
 
@@ -696,28 +694,28 @@ int firmware_upgrade_rio (rios_t *rio, char *file_name) {
     UNLOCK(errno);
 
   /* it is not necessary to check the .lok file as the player will reject bad input */
-  rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: sending firmware update device command...\n");
+  debug("rio.c firmware_upgrade_rio: sending firmware update device command...");
 
   if ((ret = send_command_rio(rio, RIO_UPDAT, 0x1, 0)) != URIO_SUCCESS) {
-    rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: device did not respond to command.\n");
+    error("rio.c firmware_upgrade_rio: device did not respond to command.");
 
     close (firm_fd);
     UNLOCK(ret);
   }
 
   if ((ret = read_block_rio(rio, rio->buffer, 64, RIO_FTS)) != URIO_SUCCESS) {
-    rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: device did not respond as expected.\n");
+    error("rio.c firmware_upgrade_rio: device did not respond as expected.");
     
     close (firm_fd);
     UNLOCK(ret);
   }
   
-  rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: device acknowleged command.\n");
+  debug("rio.c firmware_upgrade_rio: device acknowleged command.");
 
   if (player_generation > 3)
-    rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: erasing...\n");
+    debug("librioutil/rio.c firmware_upgrade_rio: erasing...");
   else
-    rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: writing firmware...\n");
+    debug("librioutil/rio.c firmware_upgrade_rio: writing firmware...");
 
   /* send the size of the firmware data */
   memset(rio->buffer, 0, 64);
@@ -765,7 +763,7 @@ int firmware_upgrade_rio (rios_t *rio, char *file_name) {
 
   if (player_generation > 3) {
     /* if this is a newer player the update is not quite done */
-    rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: writing firmware...\n");
+    debug("librioutil/rio.c firmware_upgrade_rio: writing firmware...");
 
     /* it takes a moment before the rio is ready to continue */
     usleep (1000);
@@ -800,7 +798,7 @@ int firmware_upgrade_rio (rios_t *rio, char *file_name) {
 
   close(firm_fd);
 
-  rio_log (rio, 0, "librioutil/rio.c firmware_upgrade_rio: firmware update complete\n");
+  debug("rio.c firmware_upgrade_rio: firmware update complete");
 
   UNLOCK(URIO_SUCCESS);
 }
@@ -827,7 +825,7 @@ int wake_rio (rios_t *rio) {
 }
 
 /* frees the info ptr in rios_t structure */
-void free_info_rio (rios_t *rio) {
+static void free_info_rio (rios_t *rio) {
   int i;
   flist_rio_t *tmp, *ntmp;
   
@@ -875,8 +873,7 @@ int return_free_mem_rio (rios_t *rio, u_int8_t memory_unit) {
     return -EINVAL;
   
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2, "return_free_mem_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_free_mem_rio: memory unit %02x out of range.", memory_unit);
     return -2;
   }
 
@@ -893,8 +890,7 @@ int return_used_mem_rio (rios_t *rio, u_int8_t memory_unit) {
     return -EINVAL;
 
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2, "return_used_mem_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_used_mem_rio: memory unit %02x out of range.", memory_unit);
     return -2;
   }
   
@@ -911,8 +907,7 @@ int return_total_mem_rio (rios_t *rio, u_int8_t memory_unit) {
     return -EINVAL;
 
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2, "return_total_mem_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_total_mem_rio: memory unit %02x out of range.", memory_unit);
     return -2;
   }
   
@@ -933,8 +928,7 @@ char *return_file_name_rio(rios_t *rio, u_int32_t song_id,
     return NULL;
   
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2, "return_file_name_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_file_name_rio: memory unit %02x out of range.", memory_unit);
     return NULL;
   }
   
@@ -959,9 +953,7 @@ int return_file_size_rio(rios_t *rio, u_int32_t song_id, u_int8_t memory_unit) {
     return -1;
   
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2,
-	     "return_file_size_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_file_size_rio: memory unit %02x out of range.", memory_unit);
     return -2;
   }
   
@@ -986,9 +978,7 @@ int return_num_files_rio (rios_t *rio, u_int8_t memory_unit) {
     return -EINVAL;
   
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2,
-	     "return_num_files_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_num_files_rio: memory unit %02x out of range.", memory_unit);
     return -2;
   }
   
@@ -1005,8 +995,7 @@ int return_time_rio (rios_t *rio, u_int8_t memory_unit) {
     return -EINVAL;
   
   if (memory_unit >= MAX_MEM_UNITS) {
-    rio_log (rio, -2, "return_time_rio: memory unit %02x out of range.\n",
-	     memory_unit);
+    error("return_time_rio: memory unit %02x out of range.", memory_unit);
     return -2;
   }
   
@@ -1019,7 +1008,7 @@ int return_time_rio (rios_t *rio, u_int8_t memory_unit) {
 rio_info_t *return_info_rio (rios_t *rio) {
   rio_info_t *new_info = NULL;
 
-  rio_log (rio, 0, "return_info_rio: function depricated. use get_info_rio instead.\n");
+  warning("return_info_rio: function deprecated. use get_info_rio instead.");
 
   get_info_rio (rio, &new_info);
   
@@ -1078,7 +1067,7 @@ int try_lock_rio (rios_t *rio) {
     return -EINVAL;
 
   if (rio->lock != 0) {
-    rio_log (rio, -EBUSY, "librioutil/rio.c try_lock_rio: rio is being used by another thread.\n");
+    error("librioutil/rio.c try_lock_rio: rio is being used by another thread.");
 
     return -EBUSY;
   }

@@ -1,4 +1,4 @@
- /**
+/**
  *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v2.5.1 song_managment.c
  *
@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 
 #include "rioi.h"
+#include "riolog.h"
 
 #if defined(HAVE_LIBGEN_H)
 #include <libgen.h>
@@ -47,7 +48,7 @@ static int upload_dummy_hdr (rios_t *rio, u_int8_t memory_unit, rio_file_t *file
 int do_upload (rios_t *rio, u_int8_t memory_unit, int addpipe, info_page_t info, int overwrite) {
   int error;
 
-  rio_log (rio, 0, "librioutil/song_management.c do_upload: entering\n");
+  debug("librioutil/song_management.c do_upload: entering");
 
   /* check if there the device has sufficient space for the file */
   if (overwrite == 0) {
@@ -58,24 +59,24 @@ int do_upload (rios_t *rio, u_int8_t memory_unit, int addpipe, info_page_t info,
     }
     
     if ((error = init_new_upload_rio(rio, memory_unit)) != URIO_SUCCESS) {
-      rio_log (rio, error, "librioutil/song_management.c do_upload: error in init_upload_rio\n");
+      error("librioutil/song_management.c do_upload: error in init_upload_rio");
       return error;
     }
   } else { 
     if ((error = init_overwrite_rio(rio, memory_unit)) != URIO_SUCCESS) {
-      rio_log (rio, error, "librioutil/song_management.c do_upload: error in init_upload_rio\n");
+      error("librioutil/song_management.c do_upload: error in init_overwrite_rio");
       return error;
     }
   }
 
   if ((error = bulk_upload_rio(rio, info, addpipe)) != URIO_SUCCESS) {
-    rio_log (rio, error, "librioutil/song_management.c do_upload: error in bulk_upload_rio\n");
+    error("librioutil/song_management.c do_upload: error in bulk_upload_rio");
     abort_transfer_rio(rio);
     return error;
   }
 
   if ((error = complete_upload_rio(rio, memory_unit, info))!= URIO_SUCCESS) {
-    rio_log (rio, error, "librioutil/song_management.c do_upload: error in complete_upload_rio\n");
+    error("librioutil/song_management.c do_upload: error in complete_upload_rio");
     abort_transfer_rio(rio);
     return error;
   }
@@ -88,7 +89,7 @@ int do_upload (rios_t *rio, u_int8_t memory_unit, int addpipe, info_page_t info,
   if (info.data->type == TYPE_MP3)
     update_db_rio (rio);
 
-  rio_log (rio, 0, "librioutil/song_management.c do_upload: complete\n");
+  debug("librioutil/song_management.c do_upload: complete");
 
   return URIO_SUCCESS;
 }
@@ -124,7 +125,7 @@ int add_song_rio (rios_t *rio, u_int8_t memory_unit, char *file_name,
   if (memory_unit >= rio->info.total_memory_units)
     return -1;
 
-  rio_log (rio, 0, "add_song_rio: entering...\n");
+  debug("add_song_rio: entering...");
   
   if (stat(file_name, &statinfo) < 0)
     return -ENOENT;
@@ -150,7 +151,7 @@ int add_song_rio (rios_t *rio, u_int8_t memory_unit, char *file_name,
   
     /* just in case one of the info funcs failed */
     if (error != 0) {
-      rio_log (rio, error, "Error getting song info.\n");
+      error("Error getting song info.");
     
       return error;
     }
@@ -180,7 +181,7 @@ int add_song_rio (rios_t *rio, u_int8_t memory_unit, char *file_name,
   if (addpipe < 0)
     UNLOCK(-errno);
 
-  rio_log (rio, 0, "add_song_rio: file opened and ready to send to rio.\n");
+  debug("add_song_rio: file opened and ready to send to rio.");
 
   if ((error = do_upload (rio, memory_unit, addpipe, song_info, 0)) != URIO_SUCCESS) {
     free(song_info.data);
@@ -194,7 +195,7 @@ int add_song_rio (rios_t *rio, u_int8_t memory_unit, char *file_name,
 
   free(song_info.data);
   
-  rio_log (rio, 0, "add_song_rio: complete\n");
+  debug("add_song_rio: complete");
 
   UNLOCK(URIO_SUCCESS);
 }
@@ -209,10 +210,10 @@ int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, c
   if (rio == NULL || memory_unit > 1 || filename == NULL)
     return -EINVAL;
 
-  rio_log (rio, 0, "overwrite_file_rio: entering\n");
+  debug("overwrite_file_rio: entering");
 
   if (stat (filename, &statinfo) < 0) {
-    rio_log (rio, 0, "overwrite_file_rio: could not stat %s\n", filename);
+    error("overwrite_file_rio: could not stat %s", filename);
 
     return -errno;
   }
@@ -225,7 +226,7 @@ int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, c
   /* hopefully this list is up to date */
   file_id = flist_get_file_id_rio (rio, memory_unit, file_num);
   if (file_id < 0) {
-    rio_log (rio, file_id, "librioutility/song_management.c overwrite_file_rio: file not found.\n");
+    error("librioutility/song_management.c overwrite_file_rio: file not found.");
 
     UNLOCK(file_id);
   }
@@ -237,12 +238,12 @@ int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, c
   song_info.data = &file;
     
   if ((addpipe = open(filename, O_RDONLY)) == -1) {
-    rio_log (rio, errno, "overwrite_file_rio: open failed\n");
+      error("overwrite_file_rio: open failed: %d", errno);
     UNLOCK(-1);
   }
   
   if ((ret = do_upload (rio, 0, addpipe, song_info, 1)) != URIO_SUCCESS) {
-    rio_log (rio, 0, "overwrite_file_rio: do_upload failed\n");
+    error("overwrite_file_rio: do_upload failed");
     close (addpipe);
     
     UNLOCK(ret);
@@ -250,7 +251,7 @@ int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, c
   
   close (addpipe);
   
-  rio_log (rio, 0, "overwrite_file_rio: complete\n");
+  debug("overwrite_file_rio: complete");
   
   UNLOCK(URIO_SUCCESS);
 }
@@ -261,7 +262,7 @@ int overwrite_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, c
 static int init_upload_rio (rios_t *rio, u_int8_t memory_unit, u_int8_t upload_command) {
   int ret;
 
-  rio_log (rio, 0, "librioutil/song_management.c init_upload_rio: entering\n");
+  debug("librioutil/song_management.c init_upload_rio: entering");
 
   (void)wake_rio(rio);
 
@@ -276,7 +277,7 @@ static int init_upload_rio (rios_t *rio, u_int8_t memory_unit, u_int8_t upload_c
   if (strncmp((char *)rio->buffer, "SRIODATA", 8) != 0)
     return -EBUSY;
   
-  rio_log (rio, 0, "librioutil/song_management.c init_upload_rio: finished\n");
+  debug("librioutil/song_management.c init_upload_rio: finished");
 
   return URIO_SUCCESS;
 }
@@ -299,8 +300,8 @@ static int bulk_upload_rio(rios_t *rio, info_page_t info, int addpipe) {
   long int copied = 0, amount;
   int ret;
 
-  rio_log (rio, 0, "librioutil/song_management.c bulk_upload_rio: entering\n");
-  rio_log (rio, 0, "librioutil/song_management.c bulk_upload_rio: skipping %d bytes of input\n",
+  debug("librioutil/song_management.c bulk_upload_rio: entering");
+  debug("librioutil/song_management.c bulk_upload_rio: skipping %d bytes of input",
 	   info.skip);
 
   write_size = (return_type_rio (rio) == RIONITRUS) ? (2 * RIO_FTS) : RIO_FTS;
@@ -331,13 +332,13 @@ static int bulk_upload_rio(rios_t *rio, info_page_t info, int addpipe) {
       info.data->time = copied/(info.data->bit_rate * 1000);
   }
   
-  rio_log (rio, 0, "librioutil/song_management.c bulk_upload_rio: sent %d/%d bytes to player\n",
+  debug("librioutil/song_management.c bulk_upload_rio: sent %d/%d bytes to player",
 	   copied, info.data->size);
 
   if (rio->progress != NULL)
     rio->progress(1, 1, rio->progress_ptr);
 
-  rio_log (rio, 0, "librioutil/song_management.c bulk_upload_rio: finished\n");
+  debug("librioutil/song_management.c bulk_upload_rio: finished");
 
   return URIO_SUCCESS;
 }
@@ -687,13 +688,13 @@ int update_db_rio (rios_t *rio) {
   if (return_type_rio (rio) != RIONITRUS)
     return URIO_SUCCESS;
 
-  rio_log (rio, 0, "librioutil/song_management.c update_db_rio: entering...\n");
+  debug("librioutil/song_management.c update_db_rio: entering...");
 
   /* 8 * RIO_FTS is an arbitrary size for the buffer picked because it should provide enough storage
      for building the song database. */
   buf = calloc (1, 8 * RIO_FTS);
   if (buf == NULL) {
-    rio_log (rio, -errno, "librioutil/song_management.c update_db_rio: could not allocate a buffer in which to build the new database.\n");
+    error("librioutil/song_management.c update_db_rio: could not allocate a buffer in which to build the new database.");
 
     return -errno;
   }
@@ -703,7 +704,7 @@ int update_db_rio (rios_t *rio) {
 
   wake_rio (rio);
   if ((ret = send_command_rio (rio, RIO_NINFO, 0, 0)) != URIO_SUCCESS) {
-    rio_log (rio, ret, "librioutil/song_management.c update_db_rio: rio did not respond to command.\n");
+    error("librioutil/song_management.c update_db_rio: rio did not respond to command.");
 
     free (buf);
 
@@ -714,7 +715,7 @@ int update_db_rio (rios_t *rio) {
   ret = read_block_rio (rio, NULL, 64, 64);
 
   if (ret != URIO_SUCCESS || strncmp ((char *)rio->buffer, "SRIORDY.", 8) != 0) {
-    rio_log (rio, ret, "librioutil/song_management.c update_db_rio: device is not ready to receive the nitrus database.\n");
+    error("librioutil/song_management.c update_db_rio: device is not ready to receive the nitrus database: %d", ret);
 
     free (buf);
 
@@ -725,7 +726,7 @@ int update_db_rio (rios_t *rio) {
   ret = read_block_rio (rio, NULL, 64, 64);
 
   if (ret != URIO_SUCCESS || strncmp ((char *)rio->buffer, "SRIODATA", 8) != 0) {
-    rio_log (rio, ret, "librioutil/song_management.c update_db_rio: device did not respond as expected.\n");
+    error("librioutil/song_management.c update_db_rio: device did not respond as expected: %d", ret);
 
     free (buf);
 
@@ -743,7 +744,7 @@ int update_db_rio (rios_t *rio) {
   ret = read_block_rio (rio, NULL, 64, 64);
 
   if (ret != URIO_SUCCESS || strncmp ((char *)rio->buffer, "SRIODONE", 8) != 0) {
-    rio_log (rio, ret, "librioutil/song_management.c update_db_rio: an unknown error occured while trying to write the nitrus database.\n");
+    error("librioutil/song_management.c update_db_rio: an unknown error occured while trying to write the nitrus database: %d", ret);
 
     free (buf);
 
@@ -752,7 +753,7 @@ int update_db_rio (rios_t *rio) {
 
   free (buf);
 
-  rio_log (rio, 0, "librioutil/song_management.c update_db_rio: complete.\n");
+  debug("librioutil/song_management.c update_db_rio: complete.");
 
   return URIO_SUCCESS;
 }
@@ -766,7 +767,7 @@ int update_db_rio (rios_t *rio) {
 static int complete_upload_rio (rios_t *rio, u_int8_t memory_unit, info_page_t info) {
   int ret;
 
-  rio_log (rio, 0, "complete_upload_rio: entering...\n");
+  debug("complete_upload_rio: entering...");
 
 
   /* Kelly: 08-23-03
@@ -798,7 +799,7 @@ static int complete_upload_rio (rios_t *rio, u_int8_t memory_unit, info_page_t i
   file_to_arch (info.data);
 
   /* upload the info page */
-  rio_log (rio, 0, "complete_upload_rio: writing file header\n");
+  debug("complete_upload_rio: writing file header");
   
   write_block_rio (rio, (unsigned char *)info.data, sizeof (rio_file_t), "CRIOINFO");
 
@@ -809,7 +810,7 @@ static int complete_upload_rio (rios_t *rio, u_int8_t memory_unit, info_page_t i
   if ((ret = send_command_rio(rio, 0x60, 0, 0)) != URIO_SUCCESS)
     return ret;
   
-  rio_log (rio, 0, "complete_upload_rio: complete.\n");
+  debug("complete_upload_rio: complete.");
 
   return URIO_SUCCESS;
 }
@@ -863,25 +864,25 @@ int delete_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num) {
   if ((ret = try_lock_rio (rio)) != 0)
     return ret;
 
-  rio_log (rio, 0, "delete_file_rio: entering...\n");
+  debug("delete_file_rio: entering...");
 
   file_id = flist_get_file_id_rio (rio, memory_unit, file_num);
   if (file_id < 0) {
-    rio_log (rio, file_id, "librioutil/delete_file_rio: file not found.\n");
+    error("librioutil/delete_file_rio: file not found.");
 
     UNLOCK (file_id);
   }
 
   ret = get_file_info_rio(rio, &file, memory_unit, file_id);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "librioutil/delete_file_rio: could not get file info.\n");
+    error("librioutil/delete_file_rio: could not get file info");
 
     UNLOCK(ret);
   }
 
   ret = execute_delete_rio (rio, memory_unit, &file);
   if (ret != 0) {
-    rio_log (rio, ret, "librioutil/delete_file_rio: file deletion failed.\n");
+    error("librioutil/delete_file_rio: file deletion failed.");
 
     UNLOCK(ret);
   }
@@ -894,7 +895,7 @@ int delete_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num) {
   /* update nitrus database */
   update_db_rio (rio);
     
-  rio_log (rio, 0, "delete_file_rio: complete.\n");
+  debug("delete_file_rio: complete.");
 
   UNLOCK(URIO_SUCCESS);
 }
@@ -904,7 +905,7 @@ static int upload_dummy_hdr (rios_t *rio, u_int8_t memory_unit, rio_file_t *file
   int error;
   int file_num = flist_first_free_rio (rio, memory_unit);
 
-  rio_log (rio, 0, "upload_dummy_hdr: entering...\n");
+  debug("upload_dummy_hdr: entering...");
 
   /* uploading a duplicate file header with this value in the file bits makes
      the data downloadable on older diamond rios (600, 800, 900) */
@@ -930,7 +931,7 @@ static int upload_dummy_hdr (rios_t *rio, u_int8_t memory_unit, rio_file_t *file
     return error;
   }
 
-  rio_log (rio, 0, "upload_dummy_hdr: complete.\n");
+  debug("upload_dummy_hdr: complete.");
 
   return file_num;
 }
@@ -978,20 +979,20 @@ int download_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, ch
   if ((ret = try_lock_rio (rio)) != 0)
     return ret;
 
-  rio_log (rio, 0, "librioutil/song_management.c download_file_rio: entering...\n");
+  debug("librioutil/song_management.c download_file_rio: entering...");
 
   player_generation = return_generation_rio (rio);
   
   /* get file header data */
   file_id = flist_get_file_id_rio (rio, memory_unit, file_num);
   if (file_id < 0) {
-    rio_log (rio, file_id, "librioutil/song_management.c download_file_rio: file not found.\n");
+    error("librioutil/song_management.c download_file_rio: file not found: %d", file_id);
 
     UNLOCK(file_id);
   }
 
   if ((ret = get_file_info_rio(rio, &file, memory_unit, file_id)) != URIO_SUCCESS) {
-    rio_log (rio, ret, "librioutil/song_management.c download_file_rio: error getting file info.\n");
+    error("librioutil/song_management.c download_file_rio: error getting file info: %d", ret);
 
     UNLOCK(ret);
   }
@@ -1023,12 +1024,12 @@ int download_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, ch
 	 the deletion of the file off of the device. */
       file_id = upload_dummy_hdr (rio, memory_unit, &file);
       if (file_id < 0) {
-	rio_log (rio, file_num, "librioutil/song_management.c download_file_rio: error uploading dummy file header.\n");
-	UNLOCK(file_num);
+	error("librioutil/song_management.c download_file_rio: error uploading dummy file header.");
+	UNLOCK(file_id);
       }
   
       if ((ret = get_file_info_rio(rio, &file, memory_unit, file_id)) != URIO_SUCCESS) {
-	rio_log (rio, ret, "librioutil/song_management.c download_file_rio: could not fetch song info.\n");
+        error("librioutil/song_management.c download_file_rio: could not fetch song info: %d", ret);
 	UNLOCK(ret);
       }
     }
@@ -1051,18 +1052,18 @@ int download_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, ch
   
   if (memcmp(rio->buffer, "SRIONOFL", 8) == 0) {
     /* file does not exist */
-    rio_log (rio, -ENOENT, "librioutil/song_management.c download_file_rio: (device) no such file\n");
+    error("librioutil/song_management.c download_file_rio: (device) no such file");
 
     UNLOCK(-1);
   }
 
 
   /* create local file */
-  rio_log (rio, 0, "librioutil/song_management.c download_file_rio: downloading to file %s\n", file_name);
+  debug("librioutil/song_management.c download_file_rio: downloading to file %s", file_name);
 
   downfd = creat (file_name, mode);
   if (downfd < 0) {
-    rio_log (rio, -errno, "librioutil/song_management.c download_file_rio: could not create file %s: %s\n", file_name, strerror (errno));
+    error("librioutil/song_management.c download_file_rio: could not create file %s: %s", file_name, strerror (errno));
 
     abort_transfer_rio (rio);
 
@@ -1142,6 +1143,6 @@ int download_file_rio (rios_t *rio, u_int8_t memory_unit, u_int32_t file_num, ch
     delete_file_rio (rio, memory_unit, cr_dummy);
   }
   
-  rio_log (rio, 0, "librioutil/song_management.c download_file_rio: complete.\n");
+  debug("librioutil/song_management.c download_file_rio: complete.");
   UNLOCK(URIO_SUCCESS);
 }

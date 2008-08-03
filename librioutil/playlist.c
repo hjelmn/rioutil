@@ -56,7 +56,7 @@ int create_playlist_rio (rios_t *rio, char *name, uint songs[], uint memory_unit
     uint *rio_num;
     u_int8_t **sflags;
 
-    trace("create_playlist_rio()");
+    debug("create_playlist_rio()");
 
     if (!rio || !name || !songs || !memory_units)
 	return -EINVAL;
@@ -129,7 +129,7 @@ int create_playlist_rio (rios_t *rio, char *name, uint songs[], uint memory_unit
 
     free (info.data);
 
-    rio_log (rio, 0, "add_file_rio: copy complete.\n");
+    debug("create_playlist_rio(): success");
 
     UNLOCK(URIO_SUCCESS);
 }

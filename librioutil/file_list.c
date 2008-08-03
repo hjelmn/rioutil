@@ -108,12 +108,11 @@ int generate_flist_riohd (rios_t *rio) {
   u_int8_t read_buffer[RIO_FTS];
 
   /* the Riot only has a single memory unit */
-  rio_log (rio, 0, "create_flist_riohd: entering...\n");
+  debug("create_flist_riohd: entering...");
 
   ret = send_command_rio (rio, RIO_RIOTF, 0, 0);
   if (ret != URIO_SUCCESS) {
-    rio_log (rio, ret, "create_flist_riohd: device did not respond to playlist read command\n");
-
+      error("create_flist_riohd: device did not respond to playlist read command: %d", ret);
     return ret;
   }
 
@@ -147,7 +146,7 @@ int generate_flist_riohd (rios_t *rio) {
     block_count += i;
   }
 
-  rio_log (rio, 0, "create_flist_riohd: complete\n");
+  debug("create_flist_riohd: complete");
 
   return ret;
 }
@@ -177,15 +176,16 @@ static flist_rio_t* flist_create (rios_t *rio, info_page_t info)
     flist_rio_t *flist;
 
     if (!rio || !info.data)
-      return NULL;
+        return NULL;
 
-    rio_log( rio, 0, "librioutil/file_list.c flist_create: entering...\n");
+    debug("file_list.c flist_create: entering...");
 
     flist = calloc (1, sizeof (flist_rio_t));
-    if (flist == NULL) {
-        rio_log (rio, -errno, "librioutil/file_list.c flist_create: calloc returned an error (%s).\n", strerror (errno));
+    if (flist == NULL)
+    {
+        error("flist_create: calloc returned an error (%s).", strerror(errno));
 
-      return NULL;
+        return NULL;
     }
 
     if (return_generation_rio (rio) > 3)
@@ -222,7 +222,7 @@ static flist_rio_t* flist_create (rios_t *rio, info_page_t info)
         flist->type = RIO_FILETYPE_OTHER;
     }
 
-    rio_log( rio, 0, "librioutil/file_list.c flist_create: complete\n");
+    debug("flist_create: complete");
 
     return flist;
 }
@@ -404,7 +404,7 @@ int flist_remove_rio (rios_t *rio, uint memory_unit, uint file_no) {
 flist_rio_t *return_list_rio (rios_t *rio, u_int8_t memory_unit, u_int8_t list_flags) {
   flist_rio_t *tmp;
 
-  rio_log (rio, 0, "return_list_rio: depricated function. use return_flist_rio instead.\n");
+  warning("return_list_rio: deprecated function. use return_flist_rio instead.");
 
   if (return_flist_rio (rio, memory_unit, list_flags, &tmp) < 0)
     return NULL;

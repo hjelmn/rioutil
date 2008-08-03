@@ -97,12 +97,11 @@ int usb_open_rio (rios_t *rio, int number) {
   char fileName[FILENAME_MAX+2];
   struct rioutil_usbdevice *plyr;
   int fd;
-
   struct player_device_info *p;
-
   struct usb_device_descriptor desc;
-  
   int id_product, id_vendor;
+
+  debug("usb_open_rio(rio=%x,number=%d)", rio, number);
 
   snprintf(fileName, FILENAME_MAX, "%s%i", RIODEVICE, number); 
 
@@ -114,7 +113,7 @@ int usb_open_rio (rios_t *rio, int number) {
   }
   
   if (ioctl(fd, USB_REQ_GET_DESCRIPTOR, desc) < 0) {
-    rio_log (rio, -errno, "couldn't get device descriptor for %s: %s\n", fileName, strerror(errno));
+    error("couldn't get device descriptor for %s: %s", fileName, strerror(errno));
     close (fd);
     return -errno;
   }
@@ -136,6 +135,8 @@ int usb_open_rio (rios_t *rio, int number) {
   plyr->dev   = (void *)fd;
   plyr->entry = p;
   rio->dev    = (void *)plyr;
+
+  debug("usb_open_rio(): Success");
 
   return 0;
 }

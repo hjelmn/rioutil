@@ -20,18 +20,16 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  **/
 
-#include <stdlib.h>
+#include "riolog.h"
+
+#include <ctype.h>  /* isprint() */
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <string.h>
+static unsigned int debug_level = 0;
+static FILE *debug_out = NULL;
 
-#include "rioi.h"
-
-uint debug_level = 0;
-FILE *debug_out = NULL;
-
-void set_debug_level(uint new_debug_level)
+void set_debug_level(unsigned int new_debug_level)
 {
   debug_level = new_debug_level;
 }
@@ -41,60 +39,25 @@ void set_debug_out(FILE* new_debug_out)
   debug_out = new_debug_out;
 }
 
-void riolog( uint level, char *format, ...)
+void riolog( unsigned int level, char *format, ...)
 {
+  va_list arg;
+
   if ( debug_level < level )
     return;
-
-  if ( debug_out == NULL )
-    return; /* debug_out = stderr; */
-
-  va_list arg;
 
   va_start( arg, format );
 
   vfprintf( debug_out, format, arg);
+
+  va_end( arg );
+
   fprintf( debug_out, "\n");
 
   fflush( debug_out );
-
-  va_end( arg );
 }
 
-void rio_log (rios_t *rio, int error, char *format, ...) {
-  FILE *debug_out;
-  int debug_level;
-
-  /* rio should not be null, but if it is the message should still print out  */
-  if (rio == NULL) {
-    debug_out   = stderr;
-    debug_level = 5;
-  } else {
-    debug_out   = rio->log;
-    debug_level = rio->debug;
-  }
-
-  if ( (debug_level > 0) && (debug_out != NULL) ) {
-    va_list arg;
-    
-    va_start (arg, format);
-    
-    if (rio == NULL)
-      fprintf (debug_out, "Warning: rio argument is NULL!\n");
-
-    if (error != 0)
-      fprintf(debug_out, "Error %i: ", error);
-
-    if ( (error == 0 && debug_level > 1) || error != 0 )
-      vfprintf (debug_out, format, arg);
-
-    fflush (debug_out);
-
-    va_end (arg);
-  }
-}
-
-void pretty_print_block(unsigned char *b, int len, FILE *out) {
+static void pretty_print_block(unsigned char *b, int len, FILE *out) {
   int x, indent = 16, count;
     
   fputc('\n', out);
@@ -117,23 +80,12 @@ void pretty_print_block(unsigned char *b, int len, FILE *out) {
 }
 
 /* writes out hex/ascii representation of a data buffer */
-void rio_log_data (rios_t *rio, char *dir, unsigned char *data, int data_size) {
-  int debug_level;
-  FILE *debug_out;
-
-  /* rio should not be null, but if it is the message should still print out  */
-  if (rio == NULL) {
-    debug_out   = stderr;
-    debug_level = 5;
-  } else {
-    debug_out   = rio->log;
-    debug_level = rio->debug;
-  }
-
-  rio_log (rio, 0, "dir: %s data size: 0x%08x\n", dir, data_size);
+void rio_log_data (char *dir, unsigned char *data, size_t data_size)
+{
+  riolog (4, "dir: %s data size: 0x%08x", dir, data_size);
 
   if ((debug_level > 3 && data_size < 257) || (debug_level > 4))
     pretty_print_block (data, data_size, debug_out);
-  else if (rio->debug > 4)
+  else if (debug_level > 3)
     pretty_print_block (data, 256, debug_out);
 }

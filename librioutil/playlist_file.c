@@ -182,7 +182,7 @@ int write_playlist_file( char *filename, const uint songs[], const u_int8_t **sf
     uint i;
     int ret;
 
-    trace("write_playlist_file(filename=%s,songs=%x,nsongs=%d)", \
+    debug("write_playlist_file(filename=%s,songs=%x,nsongs=%d)", \
           filename, songs, nsongs);
 
     if (!filename || !songs || !nsongs)
@@ -221,7 +221,7 @@ int write_playlist_file( char *filename, const uint songs[], const u_int8_t **sf
 
     fclose(f);
 
-    trace("write_playlist_file(): Success");
+    debug("write_playlist_file(): Success");
 
     return URIO_SUCCESS;
 }

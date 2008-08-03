@@ -600,9 +600,6 @@ typedef struct _rio_lst {
 
 ***/
 
-void rio_log      (rios_t *rio, int error, char *format, ...);
-void rio_log_data (rios_t *rio, char *dir, unsigned char *data, int data_size);
-
 int  wake_rio     (rios_t *rio);
 int  try_lock_rio (rios_t *rio);
 void unlock_rio   (rios_t *rio);
@@ -611,7 +608,6 @@ void unlock_rio   (rios_t *rio);
 int get_file_info_rio (rios_t *rio, rio_file_t *file, u_int8_t memory_unit, u_int16_t file_no);
 int get_memory_info_rio (rios_t *rio, rio_mem_t *memory, u_int8_t memory_unit);
 
-void free_info_rio (rios_t *rio);
 int return_generation_rio (rios_t *rio);
 int return_type_rio(rios_t *rio);
 void update_free_intrn_rio (rios_t *rio, u_int8_t memory_unit);
@@ -627,7 +623,7 @@ int send_command_rio (rios_t *rio, int request, int value, int index);
 /* id3.c */
 int get_id3_info (char *file_name, rio_file_t *mp3_file);
 
-/* mp3.c, downloadable.c, playlist.c */
+/* mp3.c, downloadable.c */
 int mp3_info (info_page_t *newInfo, char *file_name);
 int downloadable_info (info_page_t *newInfo, char *file_name);
 
@@ -648,8 +644,6 @@ int update_db_rio (rios_t *rio);
 /* cksum.c */
 u_int32_t crc32_rio (u_int8_t *, size_t);
 
-/* hexdump.c */
-void pretty_print_block (unsigned char *, int, FILE *);
 
 #ifndef HAVE_BASENAME
 char *basename(char *x);
