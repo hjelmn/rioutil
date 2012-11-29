@@ -35,8 +35,6 @@ AC_OUTPUT([
   man/Makefile
   spec/Makefile
   spec/rioutil.spec
-  spec/rioutil-usbdevfs.spec
-  spec/rioutil-libusb.spec
   man/rioutil.1
   linux_driver/Makefile
   debian/Makefile
