@@ -1,5 +1,5 @@
 /**
- *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.3 main.c
  *
  *   Console based interface for Rios using librioutil
@@ -89,6 +89,8 @@ static void free__song (struct _song *);
 /* signal handler */
 
 static void aborttransfer (int sigraised) {
+  /* quiet compiler warning */
+  (void) sigraised;
   current_rio->abort = 1;
 }
 
@@ -101,7 +103,7 @@ int main (int argc, char *argv[]) {
 
   unsigned char flags[27];
   char *flag_args[26];
-  char command_flags[] = {0, 2, 3, 5, 6, 8, 9, 11, 13, 15, 20, 26, -1};
+  int command_flags[] = {0, 2, 3, 5, 6, 8, 9, 11, 13, 15, 20, 26, -1};
 
   uint num_command_flags = 0;
   unsigned int mem_unit = 0;
@@ -204,7 +206,7 @@ int main (int argc, char *argv[]) {
   if (flags[1]) {
     flags[0] = 1;
 
-    for (i = optind ; i < argc ; i++)
+    for (i = optind ; i < (uint) argc ; i++)
       upstack_push (mem_unit, flag_args[19], flag_args[18], flag_args[17], argv[i], 0);
   }
 
@@ -575,11 +577,11 @@ static void new_printfiles(rios_t *rio) {
   int size_width;
   int minutes_width;
   int header_width;
-  size_t max_title_width = strlen("Title");
-  size_t max_name_width = strlen("Name");
+  int max_title_width = strlen("Title");
+  int max_name_width = strlen("Name");
   uint max_id = 0;
   int max_size = 0;
-  int max_time = 0;
+  unsigned int max_time = 0;
   int num_mem_units;
   
   flist_rio_t **flst;
@@ -596,8 +598,8 @@ static void new_printfiles(rios_t *rio) {
     }
     
     for (tmpf = flst[j]; tmpf ; tmpf = tmpf->next) {
-      max_title_width = max(max_title_width,strlen(tmpf->title));
-      max_name_width = max(max_name_width,strlen(tmpf->name));
+      max_title_width = max(max_title_width,(int)strlen(tmpf->title));
+      max_name_width = max(max_name_width,(int)strlen(tmpf->name));
       max_id = max(max_id, tmpf->num);
       max_size = max(max_size,tmpf->size);
       max_time = max(max_time,tmpf->time);
@@ -816,6 +818,10 @@ static int overwrite_file (rios_t *rio, int mem_unit, int argc, char *argv[]) {
   int song;
   int ret;
 
+  if (optind >= argc) {
+    return -1;
+  }
+
   sscanf (argv[optind], "%d", &song);
   printf ("Overwriting %s with contents of %s\n", argv[optind], argv[optind+1]);
   ret = overwrite_file_rio (rio, mem_unit, song, argv[optind+1]);
@@ -934,6 +940,9 @@ static void progress (int x, int X, void *ptr) {
   char HASH_BARRIER = '>';
   char NO_HASH      = ' ';
 
+  /* quiet compiler warning */
+  (void) ptr;
+
   if (percent != 100)
     HASH_MARK  = '-';
   else
@@ -961,6 +970,9 @@ static void progress (int x, int X, void *ptr) {
 static void progress_no_tty(int x, int X, void *ptr) {
   static int last_nummarks = 0;
   int i, nummarks;
+
+  /* quiet compiler warning */
+  (void) ptr;
 
   if (x == 0) {
     putchar ('*');
