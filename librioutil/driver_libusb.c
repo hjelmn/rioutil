@@ -1,6 +1,6 @@
 /**
- *   (c) 2002-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.0 driver_libusb.c
+ *   (c) 2002-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.3 driver_libusb.c
  *   
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library Public License as published by
@@ -17,143 +17,193 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  **/
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 
-#include <usb.h>
+#include <libusb.h>
 
 #include "driver.h"
 #include "riolog.h"
 
 char driver_method[] = "libusb";
+static int usb_rio_open_count = 0;
 
 int usb_open_rio (rios_t *rio, int number) {
   struct rioutil_usbdevice *plyr;
 
-  struct usb_bus *bus = NULL;
-  struct usb_device *dev = NULL;
+  libusb_device **device_list;
+  struct libusb_device_descriptor descriptor;
 
-  int current = 0, ret;
+  int current = 0, ret, i, count;
   struct player_device_info *p;
 
-  struct usb_device *plyr_device = NULL;
+  libusb_device *plyr_device = NULL;
 
-  debug("usb_open_rio(rio=%x,number=%d)", rio, number);
+  debug("librioutil/driver_libusb.c:usb_open_rio(rio=%x,number=%d)", rio, number);
 
-  usb_init();
+  do {
+    if (!usb_rio_open_count++) {
+      ret = libusb_init (NULL);
+      if (LIBUSB_SUCCESS != ret)
+        return -1;
+    }
 
-  usb_find_busses();
-  usb_find_devices();
+    /* find a suitable device based on device table and player number */
+    count = libusb_get_device_list (NULL, &device_list);
+    if (0 > count) {
+      error("librioutil/driver_libusb.c:usb_open_rio() error getting device list");
+      break;
+    }
 
-  /* find a suitable device based on device table and player number */
-  for (bus = usb_busses ; bus && !plyr_device ; bus = bus->next)
-    for (dev = bus->devices ; dev && !plyr_device; dev = dev->next) {
-      debug("USB Device: idVendor = %08x, idProduct = %08x", \
-            dev->descriptor.idVendor, dev->descriptor.idProduct);
+    for (i = 0 ; device_list[i] && !plyr_device ; ++i) {
+      ret = libusb_get_device_descriptor (device_list[i], &descriptor);
+
+      debug("USB Device: idVendor = %08x, idProduct = %08x", descriptor.idVendor, descriptor.idProduct);
 
       for (p = &player_devices[0] ; p->vendor_id && !plyr_device ; p++) {
-	if (dev->descriptor.idVendor == p->vendor_id && dev->descriptor.idProduct == p->product_id &&
-	    current++ == number)
-	  plyr_device = dev;
+        if (descriptor.idVendor == p->vendor_id && descriptor.idProduct == p->product_id &&
+            current++ == number)
+          plyr_device = device_list[i];
+      }
+
+      /* found it */
+      if (plyr_device) {
+        /* reference this device so it isn't freed by libusb_free_device_list (, 1) */
+        libusb_ref_device (plyr_device);
+        break;
       }
     }
-  
-  if (plyr_device == NULL || p->product_id == 0)
-    return -ENOENT;
 
-  plyr = (struct rioutil_usbdevice *) calloc (1, sizeof (struct rioutil_usbdevice));
-  if (plyr == NULL) {
-    perror ("rio_open");
-    
-    return errno;
+    /* have libusb unreference all devices */
+    libusb_free_device_list (device_list, 1);
+
+    if (plyr_device == NULL || p->product_id == 0) {
+      ret = -ENOENT;
+      break;
+    }
+
+    plyr = (struct rioutil_usbdevice *) calloc (1, sizeof (struct rioutil_usbdevice));
+    if (plyr == NULL) {
+      error("librioutil/driver_libusb.c:usb_open_rio() error allocating memory");
+      ret = -ENOMEM;
+      break;
+    }
+
+    plyr->entry = p;
+
+    /* open the device */
+    ret = libusb_open (plyr_device, (libusb_device_handle **) &plyr->dev);
+    if (LIBUSB_SUCCESS != ret) {
+      error("librioutil/driver_libusb.c:usb_open_rio() error opening usb device: %s", libusb_error_name(ret));
+      ret = -1;
+      break;
+    }
+
+    /* we can release our reference to the device now */
+    libusb_unref_device (plyr_device);
+
+    ret = libusb_set_configuration ((libusb_device_handle *) plyr->dev, 1);
+    if (LIBUSB_SUCCESS != ret) {
+      error("librioutil/driver_libusb.c:usb_open_rio() error setting configuration: %s", libusb_error_name(ret));
+      ret = -1;
+      break;
+    }
+
+    ret = libusb_claim_interface ((libusb_device_handle *) plyr->dev, 0);
+    if (LIBUSB_SUCCESS != ret) {
+      error("librioutil/driver_libusb.c:usb_open_rio() error claiming interface 0: %s", libusb_error_name(ret));
+      ret = -1;
+      break;
+    }
+
+    rio->dev    = (void *)plyr;
+
+    debug("librioutil/driver_libusb.c:usb_open_rio() Success");
+
+    return 0;
+  } while (0);
+
+  if (plyr_device) {
+    libusb_unref_device (plyr_device);
   }
 
-  plyr->entry = p;
+  usb_close_rio (rio);
 
-  /* open the device */
-  plyr->dev   = (void *) usb_open (plyr_device);
-  if (plyr->dev == NULL)
-    return -ENOENT;
-
-  usb_set_configuration (plyr->dev, 1);
-
-  ret = usb_claim_interface (plyr->dev, 0);
-  if (ret < 0) {
-    usb_close (plyr->dev);
-    free (plyr);
-
-    return ret;
-  }
-
-  rio->dev    = (void *)plyr;
-
-  debug("usb_open_rio(): Success");
-
-  return 0;
+  return ret;
 }
 
 void usb_close_rio (rios_t *rio) {
   struct rioutil_usbdevice *dev = (struct rioutil_usbdevice *)rio->dev;
 
-  usb_release_interface (dev->dev, 0);
-  usb_close (dev->dev);
+  if (NULL == dev) {
+    return;
+  }
+
+  if (dev->dev) {
+    (void) libusb_release_interface ((libusb_device_handle *) dev->dev, 0);
+    (void) libusb_close ((libusb_device_handle *) dev->dev);
+  }
 
   free (dev);
+
+  rio->dev = NULL;
+
+  if (!--usb_rio_open_count) {
+    libusb_exit (NULL);
+  }
 }
 
 /* direction is unused  here */
 int control_msg(rios_t *rio, u_int8_t request, u_int16_t value,
 		u_int16_t index, u_int16_t length, unsigned char *buffer) {
-  struct rioutil_usbdevice *dev = (struct rioutil_usbdevice *)rio->dev;
+  struct rioutil_usbdevice *dev = (struct rioutil_usbdevice *) rio->dev;
 
   unsigned char requesttype = 0;
   int ret;
-  struct usb_dev_handle *ud;
 
-  ud = dev->dev;
+  requesttype = 0x80 | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  requesttype = 0x80 | USB_TYPE_VENDOR | USB_RECIP_DEVICE;
-
-  ret = usb_control_msg(ud, requesttype, request, value, index, (char *)buffer, length, 15000);
-
-  if (ret == length)
+  ret = libusb_control_transfer ((libusb_device_handle *) dev->dev, requesttype, request, value,
+                                 index, buffer, length, 15000);
+  if (length == ret) {
     return URIO_SUCCESS;
-  else
-    return ret;
+  }
+
+  return -1;
 }
 
 int write_bulk(rios_t *rio, unsigned char *buffer, u_int32_t buffer_size) {
   struct rioutil_usbdevice *dev = (struct rioutil_usbdevice *)rio->dev;
 
-  int write_ep;
-  struct usb_dev_handle *ud;
+  int ret, transferred;
 
-  write_ep = dev->entry->oep;
-  ud = dev->dev;
+  ret = libusb_bulk_transfer ((libusb_device_handle *) dev->dev, dev->entry->oep,
+                              buffer, buffer_size, &transferred, 8000);
+  if (LIBUSB_SUCCESS != ret) {
+    return -1;
+  }
 
-  return usb_bulk_write(ud, write_ep, (char *)buffer, buffer_size, 8000);
+  return transferred;
 }
 
 int read_bulk(rios_t *rio, unsigned char *buffer, u_int32_t buffer_size){
   struct rioutil_usbdevice *dev = (struct rioutil_usbdevice *)rio->dev;
 
-  int ret;
-  int read_ep;
-  struct usb_dev_handle *ud;
+  int ret, transferred;
 
-  read_ep = dev->entry->iep | 0x80;
-  ud = dev->dev;
+  ret = libusb_bulk_transfer ((libusb_device_handle *) dev->dev, dev->entry->iep | 0x80,
+                              buffer, buffer_size, &transferred, 8000);
+  if (LIBUSB_SUCCESS != ret) {
+    error("librioutil/driver_libusb.c:read_bulk() error reading from device (rc = %i). size = %i. resetting..\n", ret, buffer_size);
 
-  ret = usb_bulk_read(ud, read_ep, (char *)buffer, buffer_size, 8000);
-  if (ret < 0) {
-      error("error reading from device (%i). size = %i. resetting..\n", ret, buffer_size);
-
-    usb_reset (ud);
+    libusb_reset_device ((libusb_device_handle *) dev->dev);
+    return -1;
   }
   
-  return ret;
+  return transferred;
 }
 
 void usb_setdebug (int i) {
-  usb_set_debug (i);
+  libusb_set_debug (NULL, i);
 }
