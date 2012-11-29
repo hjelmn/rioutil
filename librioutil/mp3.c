@@ -1,6 +1,6 @@
 /**
- *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.0 mp3.c 
+ *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.3 mp3.c 
  *
  *   MPEG file parser
  *
@@ -41,17 +41,7 @@
 #include <libgen.h>
 #endif
 
-
-#define MP3_DEBUG 0
-
-void mp3_debug (char *format, ...) {
-#if MP3_DEBUG==1
-  va_list arg;
-  va_start (arg, format);
-  vfprintf (stderr, format, arg);
-  va_end (arg);
-#endif
-}
+#define MP3_DEBUG(...) if (0) {fprintf (stderr, __VA_ARGS__ );}
 
 struct mp3_file {
   FILE *fh;
@@ -206,7 +196,7 @@ static int find_first_frame (struct mp3_file *mp3) {
 
 	fread (&xflags, 4, 1, mp3->fh);
 
-	mp3_debug ("Xing flags = %08x\n", xflags);
+	MP3_DEBUG("Xing flags = %08x\n", xflags);
 
 	if (xflags & 0x00000001) {
 	  fread (&buffer, 4, 1, mp3->fh);
@@ -215,14 +205,14 @@ static int find_first_frame (struct mp3_file *mp3) {
 	     which is a valid frame */
 	  mp3->frames = buffer + 1;
 
-	  mp3_debug ("MPEG file has %i frames\n", mp3->frames);
+	  MP3_DEBUG("MPEG file has %i frames\n", mp3->frames);
 	}
 
 	if (xflags & 0x00000002) {
 	  fread (&buffer, 4, 1, mp3->fh);
 	  mp3->xdata_size = buffer;
 
-	  mp3_debug ("MPEG file has %i bytes of data\n", mp3->xdata_size);
+	  MP3_DEBUG("MPEG file has %i bytes of data\n", mp3->xdata_size);
 	}
 
 	fseek (mp3->fh, xstart, SEEK_SET);
@@ -232,7 +222,7 @@ static int find_first_frame (struct mp3_file *mp3) {
 
       mp3->samplerate = SAMPLERATE(header);
 
-      mp3_debug ("Inital bitrate = %i\n", BITRATE(header));
+      MP3_DEBUG("Inital bitrate = %i\n", BITRATE(header));
 
       fseek (mp3->fh, -(xing_offset + 8), SEEK_CUR);
       return 0;
@@ -253,7 +243,7 @@ static int mp3_open (char *file_name, struct mp3_file *mp3) {
   char buffer[14];
   int has_v1 = 0;
 
-  mp3_debug ("mp3_open: Entering...\n");
+  MP3_DEBUG("mp3_open: Entering...\n");
 
   memset (mp3, 0 , sizeof (struct mp3_file));
 
@@ -278,7 +268,7 @@ static int mp3_open (char *file_name, struct mp3_file *mp3) {
 
     has_v1 = 1;
 
-    mp3_debug ("mp3_open: Found id3v1 tag.\n");
+    MP3_DEBUG("mp3_open: Found id3v1 tag.\n");
   }
   /*                                          */
 
@@ -289,7 +279,7 @@ static int mp3_open (char *file_name, struct mp3_file *mp3) {
 
   if (strncmp (buffer, "LYRICS200", 9) == 0) {
     int lyrics_size;
-    mp3_debug ("mp3_open: Found Lyrics v2.00\n");
+    MP3_DEBUG("mp3_open: Found Lyrics v2.00\n");
 
     /* Get the size of the Lyrics */
     fseek (mp3->fh, -15, SEEK_CUR);
@@ -300,22 +290,22 @@ static int mp3_open (char *file_name, struct mp3_file *mp3) {
     lyrics_size = strtol (buffer, NULL, 10) + 15;
     mp3->data_size -= lyrics_size;
 
-    mp3_debug ("mp3_open: Lyrics are 0x%x Bytes in length.\n", lyrics_size);
+    MP3_DEBUG("mp3_open: Lyrics are 0x%x Bytes in length.\n", lyrics_size);
   }
 
   /* find and skip id3v2 tag if it exists */
   fseek (mp3->fh, 0, SEEK_SET);
   fread (buffer, 1, 14, mp3->fh);    
-  mp3->tagv2_size = id3v2_size (buffer);
+  mp3->tagv2_size = id3v2_size ((unsigned char *) buffer);
 
   fseek (mp3->fh, mp3->tagv2_size, SEEK_SET);
 
-  mp3_debug ("mp3_open: id3v2 size: 0x%08x\n", mp3->tagv2_size);
+  MP3_DEBUG("mp3_open: id3v2 size: 0x%08x\n", mp3->tagv2_size);
   /****************************************/
 
   mp3->vbr = 0;
 
-  mp3_debug ("mp3_open: Complete\n");
+  MP3_DEBUG("mp3_open: Complete\n");
 
   return find_first_frame (mp3);
 }
@@ -326,13 +316,11 @@ static int mp3_scan (struct mp3_file *mp3) {
   int header;
   int ret;
   int frames = 0;
-  int last_bitrate = -1;
+  int last_bitrate = -1, bitrate;
   int total_framesize = 0;
-
-  size_t bitrate;
   int frame_size;
 
-  mp3_debug ("mp3_scan: Entering...\n");
+  MP3_DEBUG("mp3_scan: Entering...\n");
 
   if (mp3->frames == 0 || mp3->xdata_size == 0) {
     while (ftell (mp3->fh) < mp3->data_size && (frames < FRAME_COUNT || mp3->vbr)) {
@@ -343,16 +331,17 @@ static int mp3_scan (struct mp3_file *mp3) {
       if (check_mp3_header (header) != 0) {
 	fseek (mp3->fh, -4, SEEK_CUR);
 
-	mp3_debug ("mp3_scan: Invalid header %08x %08x Bytes into the file.\n", header, ftell(mp3->fh));
+	MP3_DEBUG("mp3_scan: Invalid header %08x %08x Bytes into the file.\n",
+                  (unsigned int) header, (unsigned int) ftell(mp3->fh));
 	
 	if ((ret = find_first_frame (mp3)) == -1) {
-	  mp3_debug ("mp3_scan: An error occured at line: %i\n", __LINE__);
+	  MP3_DEBUG("mp3_scan: An error occured at line: %i\n", __LINE__);
 	  
 	  /* This is hack-ish, but there might be junk at the end of the file. */
 	  
 	  break;
 	} else if (ret == -2) {
-	  mp3_debug ("mp3_scan: Ran into MLLT frame.\n");
+	  MP3_DEBUG("mp3_scan: Ran into MLLT frame.\n");
 	  
 	  mp3->data_size -= (mp3->file_size) - ftell (mp3->fh);
 	  
@@ -390,8 +379,8 @@ static int mp3_scan (struct mp3_file *mp3) {
   mp3->length     = (int)((double)mp3->frames * 26.12245); /* each mpeg frame represents 26.12245ms */
   mp3->bitrate    = (int)(((float)mp3->xdata_size * 8.0)/(float)mp3->length);
 
-  mp3_debug ("mp3_scan: Finished scan. SampleRate: %i, BitRate: %i, Length: %i, Frames: %i.\n",
-	     mp3->samplerate, mp3->bitrate, mp3->length, mp3->frames);
+  MP3_DEBUG("mp3_scan: Finished scan. SampleRate: %i, BitRate: %i, Length: %i, Frames: %i.\n",
+            mp3->samplerate, mp3->bitrate, mp3->length, mp3->frames);
 
   if (mp3->samplerate <= 0 || mp3->bitrate <= 0 || mp3->length <= 0)
     return -1;
