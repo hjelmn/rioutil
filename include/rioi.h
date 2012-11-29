@@ -1,6 +1,6 @@
 /**
- *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.0 rioi.h
+ *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.3 rioi.h
  *
  *   header file for librioutil internal functions
  *   
@@ -182,13 +182,13 @@ Group ID                0x7c   ????            ????               64            
 #include <endian.h>
 #include <byteswap.h>
 
-#elif defined (__MacOSX__)
+#elif defined (__APPLE__)
 
 #include <architecture/byte_order.h>
 
-#define bswap_64(x) NXSwapLongLong(x)
-#define bswap_32(x) NXSwapLong(x)
-#define bswap_16(x) NXSwapShort(x)
+#define bswap_64(x) OSSwapInt64(x)
+#define bswap_32(x) OSSwapInt32(x)
+#define bswap_16(x) OSSwapInt16(x)
 
 #elif defined (__NetBSD__)
 
@@ -607,6 +607,7 @@ void unlock_rio   (rios_t *rio);
 /* rio.c : used to build a rios_t */
 int get_file_info_rio (rios_t *rio, rio_file_t *file, u_int8_t memory_unit, u_int16_t file_no);
 int get_memory_info_rio (rios_t *rio, rio_mem_t *memory, u_int8_t memory_unit);
+int generate_mem_list_rio (rios_t *rio);
 
 int return_generation_rio (rios_t *rio);
 int return_type_rio(rios_t *rio);
@@ -622,6 +623,7 @@ int send_command_rio (rios_t *rio, int request, int value, int index);
 
 /* id3.c */
 int get_id3_info (char *file_name, rio_file_t *mp3_file);
+int id3v2_size (unsigned char data[14]);
 
 /* mp3.c, downloadable.c */
 int mp3_info (info_page_t *newInfo, char *file_name);
@@ -636,6 +638,7 @@ int flist_get_file_name_rio (rios_t *rio, uint memory_unit, uint file_no, char *
 int flist_get_file_id_rio (rios_t *rio, uint memory_unit, uint file_no);
 int size_flist_rio (rios_t *rio, int memory_unit);
 int flist_first_free_rio (rios_t *rio, int memory_unit);
+flist_rio_t *get_flist_rio (rios_t *rio, uint memory_unit, uint file_no);
 
 /* song_management.c */
 int do_upload (rios_t *rio, u_int8_t memory_unit, int addpipe, info_page_t info, int overwrite);
@@ -643,6 +646,10 @@ int update_db_rio (rios_t *rio);
 
 /* cksum.c */
 u_int32_t crc32_rio (u_int8_t *, size_t);
+
+/* playlist.c */
+int new_playlist_info (info_page_t *newInfo, char *name);
+int playlist_info (info_page_t *newInfo, char *file_name);
 
 
 #ifndef HAVE_BASENAME
