@@ -621,7 +621,7 @@ int format_mem_rio (rios_t *rio, u_int8_t memory_unit) {
 
     /* newer players (Fuse, Chiba, Cali) return their progress */
     if (strstr((char *)rio->buffer, "SRIOPR") != NULL) {
-      sscanf ((char *)rio->buffer, "SRIOPR%" PRIu32, &pd);
+      sscanf ((char *)rio->buffer, "SRIOPR%" SCNu32, &pd);
 
       if (rio->progress)
 	rio->progress (pd, 100, rio->progress_ptr);
