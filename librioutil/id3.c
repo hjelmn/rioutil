@@ -1,6 +1,6 @@
 /**
- *   (c) 2003-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v2.0a id3.c 
+ *   (c) 2003-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v2.0b id3.c 
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,12 +32,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#ifdef HAVE_LIBGEN_H
-#include <libgen.h>
-#endif
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
+#endif
+
+#ifdef HAVE_LIBGEN_H
+#include <libgen.h>
 #endif
 
 #include "rioi.h"
@@ -73,7 +73,7 @@ static int synchsafe_to_int (unsigned char *buf, int nbytes) {
   int error = 0;
 
   for (i = 0, id3v2_len = 0 ; i < nbytes ; i++) {
-    id3v2_len = (id3v2_len << 7) | buf[i] & 0x7f;
+    id3v2_len = (id3v2_len << 7) | (buf[i] & 0x7f);
 
     /* the high bit of any can not be set in a syncsafe integer */
     if (buf[i] & 0x80)
@@ -83,7 +83,7 @@ static int synchsafe_to_int (unsigned char *buf, int nbytes) {
   if (error)
     /* fall back to a 32-bit BE int */
     for (i = 0, id3v2_len = 0 ; i < nbytes ; i++)
-      id3v2_len = (id3v2_len << 8) | buf[i] & 0xff;
+      id3v2_len = (id3v2_len << 8) | (buf[i] & 0xff);
 
   return id3v2_len;
 }
@@ -92,7 +92,6 @@ int id3v2_size (unsigned char data[14]) {
   int major_version;
   unsigned char id3v2_flags;
   int id3v2_len = 0;
-  int id3v2_extendedlen = 0;
   int head;
 
   memcpy (&head, data, 4);
@@ -230,8 +229,8 @@ static int check_id_id3v2 (FILE *fh, int offset) {
 */
 static int one_pass_parse_id3v2 (FILE *fh, unsigned char *tag_data, int tag_datalen, int id3v2_majorversion,
 				 rio_file_t *mp3_file) {
-  int i, j;
-  unsigned char *dstp, *tag_temp;
+  int i;
+  unsigned char *tag_temp;
   char *slash;
   char encoding[11], identifier[5];
   int newv = (id3v2_majorversion > 2) ? 1 : 0;
@@ -271,8 +270,8 @@ static int one_pass_parse_id3v2 (FILE *fh, unsigned char *tag_data, int tag_data
 	length = big32_2_arch32(((int *)tag_data)[1]);
     }
 
-    if (length < 0) {
-      fprintf (stderr, "id3.c/parse_id3v2: tag %s has data length < 0... Aborting!\n", identifier);
+    if (length == (size_t) -1) {
+      fprintf (stderr, "id3.c/parse_id3v2: tag %s has bad length... Aborting!\n", identifier);
 
       return -1;
     }
