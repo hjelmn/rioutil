@@ -1,6 +1,6 @@
 /**
- *   (c) 2005-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.0 file_list.c
+ *   (c) 2005-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.3 file_list.c
  *   
  *   c version of librioutil
  *   all sources are c style gnu (c-set-style in emacs)
@@ -310,22 +310,20 @@ int flist_add_rio (rios_t *rio, int memory_unit, info_page_t info) {
   return 0;
 }
 
-flist_rio_t* get_flist_rio (rios_t *rio, uint memory_unit, uint file_no )
-{
-    flist_rio_t *tmp;
+flist_rio_t *get_flist_rio (rios_t *rio, uint memory_unit, uint file_no) {
+  flist_rio_t *tmp;
 
-    if( !rio )
-        return -EINVAL;
-
-    for( tmp = rio->info.memory[memory_unit].files; tmp; tmp = tmp->next)
-    {
-        if( tmp->num == file_no )
-            return tmp;
-    }
-
-    warning("get_flist_rio: couldn't find file with num=%d", file_no);
-
+  if (!rio)
     return NULL;
+
+  for (tmp = rio->info.memory[memory_unit].files ; tmp ; tmp = tmp->next) {
+    if (tmp->num == file_no)
+      return tmp;
+  }
+
+  warning("get_flist_rio: couldn't find file with num=%d", file_no);
+
+  return NULL;
 }
 
 int flist_get_file_id_rio (rios_t *rio, uint memory_unit, uint file_no) {
