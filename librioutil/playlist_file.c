@@ -174,7 +174,7 @@ int read_playlist_file ( const char *filename, uint **songs, uint *nsongs )
 /* songs: array of rio_num
  * sflags: array of u_int8_t[3]
  */
-int write_playlist_file( char *filename, const uint songs[], const u_int8_t **sflags, uint nsongs)
+int write_playlist_file( char *filename, const uint songs[], u_int8_t * const *sflags, uint nsongs)
 {
     struct rio_playlist_file_header header;
     struct rio_playlist_file_entry entry;

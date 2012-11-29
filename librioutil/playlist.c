@@ -44,9 +44,6 @@
 #endif
 
 
-int new_playlist_info (info_page_t *newInfo, char *name);
-int playlist_info (info_page_t *newInfo, char *file_name);
-
 int create_playlist_rio (rios_t *rio, char *name, uint songs[], uint memory_units[], uint nsongs) {
     info_page_t info;
     int error, addpipe;

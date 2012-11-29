@@ -501,7 +501,7 @@ static int build_db_sec_rio (rios_t *rio, unsigned char *buf, int num_tracks, un
   cblock += 2;
 
   strcpy ((char *)&buf[3 * cblock], db_sections[section]);
-  cblock += (strlen(db_sections[section]) + 3 - strlen(db_sections[section]) % 3)/3;
+  cblock += (strlen(db_sections[section]) + 2)/3;
 
   /* these sections are not yet implemented. (year, date, playlist) */
   if (section > 3)
@@ -593,7 +593,8 @@ static int build_db_sec_rio (rios_t *rio, unsigned char *buf, int num_tracks, un
 }
 
 static int build_database_rio (rios_t *rio, unsigned char *buf, size_t buf_size) {
-  int i, j;
+  int i;
+  uint j;
 
   unsigned char *taxi_buf;
   
@@ -603,9 +604,12 @@ static int build_database_rio (rios_t *rio, unsigned char *buf, size_t buf_size)
 
   flist_rio_t *flist;
 
-  char db_magic[] = { 0x55, 0x9a, 0x81, 0x03, 0x00, 0x00 };
-  int prev_num = 0;
+  unsigned char db_magic[] = { 0x55, 0x9a, 0x81, 0x03, 0x00, 0x00 };
+  uint prev_num = 0;
   int num_tracks_block;
+
+  /* buf_size is not used (though it should be checked). remove compiler warning */
+  (void) buf_size;
 
   memset (buf, 0xff, 0x3c);
 
@@ -769,6 +773,8 @@ static int complete_upload_rio (rios_t *rio, u_int8_t memory_unit, info_page_t i
 
   debug("complete_upload_rio: entering...");
 
+  /* memory_unit is unused. remove compiler warning */
+  (void) memory_unit;
 
   /* Kelly: 08-23-03
      TODO: Set some the data in the RIOT's portion of the

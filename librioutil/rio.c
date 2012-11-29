@@ -1,6 +1,6 @@
 /**
- *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.2.1 rio.c
+ *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.3 rio.c
  *   
  *   c version of librioutil
  *   all sources are c style gnu (c-set-style in emacs)
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #include <unistd.h>
 #include <time.h>
@@ -60,7 +61,7 @@ struct player_device_info player_devices[] = {
   /* Rio Riot Uses bulk endpoint 2 for read and 1 for write */
   {VENDOR_DIAMOND01, PRODUCT_RIORIOT, 0x2, 0x1, RIORIOT  , "Rio Riot"      , 3},
   {VENDOR_DIAMOND01, PRODUCT_NITRUS,  0x1, 0x2, RIONITRUS, "Rio Nitrus"    , 5},
-  {0}
+  {0,0,0,0,0,NULL,0}
 };
 
 
@@ -508,7 +509,6 @@ static void sane_info_copy (rio_info_t *info, rio_prefs_t *prefs);
 int set_info_rio(rios_t *rio, rio_info_t *info) {
   rio_prefs_t pref_buf;
   int ret;
-  unsigned char cmd;
 
   if (rio == NULL)
     return -EINVAL;
@@ -621,7 +621,7 @@ int format_mem_rio (rios_t *rio, u_int8_t memory_unit) {
 
     /* newer players (Fuse, Chiba, Cali) return their progress */
     if (strstr((char *)rio->buffer, "SRIOPR") != NULL) {
-      sscanf ((char *)rio->buffer, "SRIOPR%02d", &pd);
+      sscanf ((char *)rio->buffer, "SRIOPR%" PRIu32, &pd);
 
       if (rio->progress)
 	rio->progress (pd, 100, rio->progress_ptr);

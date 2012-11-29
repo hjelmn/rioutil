@@ -1,6 +1,6 @@
 /**
- *   (c) 2001-2007 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.0 rioio.c 
+ *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.3 rioio.c 
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,8 @@
 #include "driver.h"
 
 int read_block_rio (rios_t *rio, unsigned char *ptr, u_int32_t size, u_int32_t block_size) {
-  int i, ret;
+  u_int32_t i;
+  int ret;
   unsigned char *buffer;
 
   buffer = (ptr) ? ptr : rio->buffer;

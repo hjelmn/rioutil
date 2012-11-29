@@ -54,7 +54,7 @@ static void crc32_init_table(void) {
 
 u_int32_t crc32_rio (u_int8_t *buf, size_t length) {
   unsigned long crc = 0;
-  int i;
+  size_t i;
 
   if (crc32_initialized == 0)
     crc32_init_table();

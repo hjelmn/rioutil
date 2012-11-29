@@ -35,7 +35,7 @@
  * Returns: -EINVAL if parameters are bad, errno if file reading fails.
  *          URIO_SUCCESS on success.
  */
-int read_playlist_file ( const char *filename, unsigned int **songs, \
+int read_playlist_file ( const char *filename, unsigned int **songs,
                          unsigned int *nsongs );
 
 /**
@@ -46,8 +46,8 @@ int read_playlist_file ( const char *filename, unsigned int **songs, \
  * sflags: array of u_int8_t[3]
  * nsongs: number of songs in the playlist
  */
-int write_playlist_file( char *filename, const unsigned int songs[], \
-                         const u_int8_t *sflags[], unsigned int nsongs);
+int write_playlist_file( char *filename, const unsigned int songs[],
+                         u_int8_t * const *sflags, unsigned int nsongs);
 
 
 #endif /* PLAYLIST_FILE_H */
