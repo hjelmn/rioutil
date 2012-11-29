@@ -22,17 +22,17 @@ Phillips psa[play - unknown
 If you have any questions, comments, or patches please email:
 hjelmn at users dot sourceforge dot net
 
-** NOTE **
-- If compiling from cvs, use ./autogen.sh instead of ./configure.
-- You probably want to install libusb and run configure with --with-libusb
-
 rioutil is free software released under the terms of the LGPL (read LICENCE file).
 
+******************************************************************************
+** building                                                                 **
+******************************************************************************
+# if using a svn checkout this extra line is needed
+% ./autogen.pl
 
-** If you like rioutil and you want to thank me for my time, you can send me an item
-   off my Amazon wish list :D **
-http://www.amazon.com/o/registry/2T0HLGZAHALMM
-
+% configure
+% make
+% make install
 
 ******************************************************************************
 ** building package                                                         **
@@ -45,54 +45,25 @@ redhat:
 % make dist
 % cp rioutil-{VERSION}.tar.gz {RPM SOURCE DIRECTORY}
 % cd spec
-% rpmbuild -bb rioutil-{configuration}.spec
+% rpmbuild -bb rioutil.spec
+
+*** NOTES **
+ - libusb is now the only availabke driver so you no longer need to specify an
+   option to use libusb.
+ - For darwin 5.x, 6.x or macos 10.x.x you will want libusb-1.0 1.0.9 or newer.
 
 ******************************************************************************
-** Very likely you will want to use libusb (regardless of your platform).   **
+** firmware notes                                                           **
 ******************************************************************************
-% ./configure --with-libusb
-
-*** libusb NOTES **
- - libusb is now the default driver so you no longer need to use this option.
- - to disable libusb use the option --without-libusb
- - For linux see usbdevfs notes becuase it is required before this method will.
-work.
- - For darwin 5.x, 6.x or macos 10.x.x you will want libusb 1.6 or newer.
-
-******************************************************************************
-** Instructions if you don't want to use usbdevfs (linux)                   **
-** (I'll create a patch one of these days)                                  **
-******************************************************************************
-% ./configure --without-usbdevfs
-% make
-
-(as root)
-% cp linux_driver/rio* /usr/src/linux/drivers/usb/
-% cd /usr/src/linux/drivers/usb
-% mv rios.c rio500.c
-% cd /usr/src/linux
-(add the rio500 module in configuration)
-% make modules
-% make modules_install
-% insmod rio500
-
-(and if you do not use devfs and the device file does not exist)
-% mkdir /dev/usb
-% mknod /dev/usb/rio0 c 180 64
-
-The 64 is the base minor, if you have more than one rio add the minor
-assigned by the driver (you can see the minor number in /var/log/messages).
-i.e. :
-<snip from /var/log/messages>
-Device assigned minor 1
-</snip>
-% mknod /dev/usb/rio1 c 180 65
 
 If you want firmware updates, please do not email me. I dont know
 the legal issues with mirroring them, so if you want to get a hold of
 one and can use stuffit expander (www.aladdinsys.com), you can download
 the firmware designed for the mac from www.riohome.com (a .sit.hqx or .zip file).
 Once this file is decompressed you should have a .lok file, this is the firmware.
+
+www.riohome.com is no longer available. Firmware updates can probably be found
+by searching the web. Below are the latest known versions for various players.
 
 08/30/2006: Current firmware versions:
 rio600   : 1.56
