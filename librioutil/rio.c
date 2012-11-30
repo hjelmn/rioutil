@@ -570,7 +570,7 @@ int set_name_rio (rios_t *rio, char *name) {
 
   strncpy (rio->info.name, name, 16);
 
-  return set_info_rio (rio, info);
+  return set_info_rio (rio, &rio->info);
 }
 
 /*

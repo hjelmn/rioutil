@@ -290,6 +290,9 @@ int main (int argc, char *argv[]) {
       printf ("Updating firmware, this will take about 30 seconds to complete.\n");
 
       ret = firmware_upgrade_rio (&rio, flag_args[20]);
+    } else if (flags[13]) {
+      printf ("Seting device name to %s...\n", flag_args[13]);
+      ret = set_name_rio (&rio, flag_args[13]);
     } else if (flags[5])
       ret = format_mem_rio (&rio, mem_unit);
     else if (flags[9])
