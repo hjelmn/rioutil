@@ -183,7 +183,7 @@ static int set_time_rio (rios_t *rio) {
 
   curr_time = tv.tv_sec - 60 * tz.tz_minuteswest;
   
-  if (tmp->tm_isdst != -1)
+  if (tmp->tm_isdst > 0)
     curr_time += 3600 * tmp->tm_isdst;
 
   ret = send_command_rio (rio, 0x60, 0, 0);
