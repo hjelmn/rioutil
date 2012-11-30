@@ -28,6 +28,7 @@
 
 char driver_method[] = "libusb";
 static int usb_rio_open_count = 0;
+static int usb_debug_level = 0;
 
 int usb_open_rio (rios_t *rio, int number) {
   struct rioutil_usbdevice *plyr;
@@ -47,6 +48,9 @@ int usb_open_rio (rios_t *rio, int number) {
       ret = libusb_init (NULL);
       if (LIBUSB_SUCCESS != ret)
         return -1;
+
+      if (usb_debug_level)
+	libusb_set_debug (NULL, usb_debug_level);
     }
 
     /* find a suitable device based on device table and player number */
@@ -205,5 +209,5 @@ int read_bulk(rios_t *rio, unsigned char *buffer, u_int32_t buffer_size){
 }
 
 void usb_setdebug (int i) {
-  libusb_set_debug (NULL, i);
+  usb_debug_level = i;
 }
