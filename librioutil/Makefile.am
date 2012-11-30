@@ -1,5 +1,7 @@
 libdir = $(prefix)/lib
 
+noinst_HEADERS = genre.h playlist_file.h riolog.h
+
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS = -Wall -Wextra -pedantic $(libusb_CFLAGS)
 
