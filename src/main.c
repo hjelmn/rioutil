@@ -1,5 +1,5 @@
 /**
- *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2001-2016 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.3 main.c
  *
  *   Console based interface for Rios using librioutil
@@ -360,17 +360,14 @@ static void dir_add_songs (char *filename, int depth, int mem_unit) {
 
 static int pipe_upload (rios_t *rio, int mem_unit, char *title, char *album, char *artist) {
   int error, ret, fd;
-  char file_name[PATH_MAX] = {'\0', };
+  char file_name[] = "/tmp/rioutil_XXXXXX.mp3";
   char file_buffer[1024];
 
-  tmpnam (file_name);
-  if (file_name[0] == '\0') {
-    fprintf (stderr, "rioutil/pipe_upload: tmpname failed: %s\n", strerror (errno));
+  if (NULL == mktemp (file_name)) {
+    fprintf (stderr, "rioutil/pipe_upload: mktemp failed: %s\n", strerror (errno));
 
     return -errno;
   }
-
-  sprintf (&file_name[strlen(file_name)], ".mp3");
 
   fd = open (file_name, O_WRONLY | O_CREAT | O_EXCL, 0644);
   if (fd < 0) {
@@ -665,7 +662,7 @@ static void print_info(rios_t *rio) {
   int nfiles = 0;
   uint ptt = 0, ptf = 0;
 
-  float ptu, free_mem;
+  float ptu = 0.0, free_mem;
   float used = 0.;
   float size_div, total;
   rio_info_t *info;
@@ -876,7 +873,7 @@ static int print_playlists (rios_t *rio)
 
 static void print_version (void) {
   printf("%s %s\n", PACKAGE, VERSION);
-  printf("Copyright (C) 2003-2007 Nathan Hjelm\n\n");
+  printf("Copyright (C) 2003-2016 Nathan Hjelm\n\n");
   
   printf("%s comes with NO WARRANTY.\n", PACKAGE);
   printf("You may redistribute copies of %s under the terms\n", PACKAGE);

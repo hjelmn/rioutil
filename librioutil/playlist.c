@@ -135,7 +135,7 @@ int create_playlist_rio (rios_t *rio, char *name, uint songs[], uint memory_unit
 int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist_t *playlist )
 {
     int ret;
-    char *filename;
+    char filename[] = "/tmp/riopl.XXXXXX";
     uint *songs;
     uint nsongs;
     flist_rio_t *flist;
@@ -146,7 +146,7 @@ int get_playlist_rio( rios_t *rio, uint memory_unit, uint file_num, rio_playlist
     if (!rio || !playlist)
 	return -EINVAL;
 
-    filename = tempnam (NULL, "riopl");
+    (void) mktemp (filename);
 
     debug("Playlist temp file = %s", filename);
 

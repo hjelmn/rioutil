@@ -1,5 +1,5 @@
 /**
- *   (c) 2005-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2005-2016 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.3 file_list.c
  *   
  *   c version of librioutil
@@ -195,8 +195,8 @@ static flist_rio_t* flist_create (rios_t *rio, info_page_t info)
     strncpy(flist->title,  info.data->title, 64);
     strncpy(flist->album,  info.data->album, 64);
     strncpy(flist->name,   info.data->name, 64);
-    strncpy(flist->genre,  (char *)info.data->genre2, 22);
-    strncpy(flist->year,   (char *)info.data->year2, 4);
+    strncpy(flist->genre,  (char *)info.data->genre2, sizeof (flist->genre));
+    strncpy(flist->year,   (char *)info.data->year2, sizeof (flist->year));
 
     flist->time       = info.data->time;
     flist->bitrate    = info.data->bit_rate >> 7;

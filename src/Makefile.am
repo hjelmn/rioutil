@@ -2,7 +2,7 @@ bin_PROGRAMS = rioutil
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-rioutil_SOURCES = main.c getopt.c getopt1.c main.h getopt.h
+rioutil_SOURCES = main.c main.h getopt.h
 
 rioutil_LDADD = $(top_srcdir)/librioutil/librioutil.la
 rioutil_LDFLAGS = $(PREBIND_FLAGS)

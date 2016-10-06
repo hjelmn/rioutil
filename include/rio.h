@@ -79,7 +79,7 @@ typedef struct _rio_file_list {
   /**************************************************************/
 
   char year[5];
-  char genre[17];
+  char genre[22];
 
   int track_number;
 } file_list;

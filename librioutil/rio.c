@@ -1,5 +1,5 @@
 /**
- *   (c) 2001-2012 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2001-2016 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.3 rio.c
  *   
  *   c version of librioutil
@@ -560,7 +560,6 @@ int set_info_rio(rios_t *rio, rio_info_t *info) {
 
 int set_name_rio (rios_t *rio, char *name) {
   int ret;
-  rio_info_t *info;
 
   if (rio == NULL || name == NULL)
     return -EINVAL;
@@ -673,9 +672,6 @@ int firmware_upgrade_rio (rios_t *rio, char *file_name) {
 
   size = statinfo.st_size;
 
-  debug("rio.c firmware_upgrade_rio: updating firmware of generation %d rio...",
-	   player_generation);
-  
   (void)wake_rio(rio);
 
   /* some upgrades require that the memory unit be erased */
@@ -688,6 +684,8 @@ int firmware_upgrade_rio (rios_t *rio, char *file_name) {
 
   player_generation = return_generation_rio (rio);
 
+  debug ("rio.c firmware_upgrade_rio: updating firmware of generation %d rio...",
+         player_generation);
 
   /* try to open the firmware file */
   if ((firm_fd = open(file_name, O_RDONLY)) < 0)
