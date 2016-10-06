@@ -2,7 +2,10 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT([rioutil],[1.5.3])
 AC_CONFIG_SRCDIR([librioutil/rio.c])
 AM_CONFIG_HEADER([include/config.h])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
+
+LT_INIT
 
 AM_PROG_LIBTOOL
 
@@ -10,7 +13,6 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_GCC_TRADITIONAL
-AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
