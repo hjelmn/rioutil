@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([rioutil],[1.5.3])
+AC_INIT([rioutil],[1.5.4])
 AC_CONFIG_SRCDIR([librioutil/rio.c])
 AM_CONFIG_HEADER([include/config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -27,7 +27,7 @@ AC_CHECK_FUNCS(basename memcmp)
 PKG_CHECK_MODULES([libusb], [libusb-1.0])
 
 PACKAGE=rioutil
-VERSION=1.5.3
+VERSION=1.5.4
 
 AC_OUTPUT([
   Makefile
