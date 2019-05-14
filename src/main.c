@@ -1,6 +1,6 @@
 /**
- *   (c) 2001-2016 Nathan Hjelm <hjelmn@users.sourceforge.net>
- *   v1.5.3 main.c
+ *   (c) 2001-2019 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   v1.5.4 main.c
  *
  *   Console based interface for Rios using librioutil
  *   
@@ -53,11 +53,19 @@
 /* a simple version of basename that returns a pointer into x where the basename
    begins or NULL if x has a trailing slash. */
 static char *basename_simple (char *x){
-  size_t i;
+  size_t i = strlen (x) - 1;
  
-  for (i = strlen(x) - 1 ; x[i] != '/'; i--);
+  if ('/' == x[i]) {
+    return NULL;
+  }
 
-  return ((i == strlen(x) - 1) ? NULL : &x[i+1]);
+  while (--i > 0) {
+    if (x[i] == '/') {
+      return x + i + 1;
+    }
+  }
+
+  return x;
 }
 
 static rios_t *current_rio = NULL;
@@ -85,7 +93,6 @@ static void upstack_push_top (int mem_unit, char *title, char *artist, char *alb
 static struct _song *upstack_pop (void);
 static void free__song (struct _song *);
 
-
 /* signal handler */
 
 static void aborttransfer (int sigraised) {
@@ -99,14 +106,14 @@ static void aborttransfer (int sigraised) {
 
 int main (int argc, char *argv[]) {
   int c, ret;
-  uint i;
+  unsigned int i;
 
   unsigned char flags[27];
   char *flag_args[26];
   int command_flags[] = {0, 2, 3, 5, 6, 8, 9, 11, 13, 15, 20, 26, -1};
 
   uint num_command_flags = 0;
-  unsigned int mem_unit = 0;
+  unsigned int mem_unit = -1;
   long int dev;
 
   rios_t rio;
@@ -151,8 +158,19 @@ int main (int argc, char *argv[]) {
   while((c = getopt_long(argc, argv, "W;a:bld:ec:u:s:t:r:m:po:n:fh?ivgzjkO",
 			 long_options, NULL)) != -1){
     switch(c){
+    case 'm':
+      /* memory units are not relevant when upgrading */
+      mem_unit = strtol (optarg, NULL, 10);
+      if (errno != 0) {
+	fprintf (stderr, "Invalid argument for --memory option: %s\n", optarg);
+	exit (EXIT_FAILURE);
+      }
+
+      break;
     case 'a':
-      upstack_push (mem_unit, flag_args[19], flag_args[18], flag_args[17], optarg, 0);
+      for (i = (unsigned) optind ; argv[i] && argv[i][0] != '-' ; ++i) {
+	upstack_push (mem_unit, flag_args[19], flag_args[18], flag_args[17], argv[i], 0);
+      }
     case 'c':
     case 'd':
     case 'n':
@@ -161,7 +179,6 @@ int main (int argc, char *argv[]) {
     case 't':
     case 'u':
     case 'o':
-    case 'm':
       flag_args[c - 'a'] = optarg;
     case 'b':
     case 'f':
@@ -223,8 +240,6 @@ int main (int argc, char *argv[]) {
     exit (EXIT_FAILURE);
   }
 
-    
-
   /* open the player */
   if (flags[5] || flags[20]) {
     flags[25] = 1;
@@ -249,21 +264,6 @@ int main (int argc, char *argv[]) {
 
   /* setup progress bar callback */
   set_progress_rio (&rio, ((is_a_tty) ? progress : progress_no_tty), NULL);
-
-
-  /* set memory unit (only valid for upload, format, and delete) */
-  if (flags[25] == 0) {
-    /* memory units are not relevant when upgrading */
-    mem_unit = (flags[12]) ? strtol (flag_args[12], NULL, 10) : 0;
-
-    if (mem_unit >= return_mem_units_rio (&rio)) {
-      fprintf (stderr, "Memory unit identifier %d is outside the valid range of 0-%d for this device.\n",
-	       mem_unit, return_mem_units_rio (&rio) - 1);
-
-      close_rio (&rio);
-      exit (EXIT_FAILURE);
-    }
-  }
 
   /* print device/file information */
   if (flags[25] == 0) {
@@ -391,66 +391,93 @@ static int pipe_upload (rios_t *rio, int mem_unit, char *title, char *album, cha
   return error;
 }
 
+static void process_song (rios_t *rio, struct _song *p) {
+  int ret, mem_unit, mem_units;
+  char display_name[32];
+  struct stat statinfo;
+  size_t file_namel;
+  char *file_name;
+  long free_size;
+
+  mem_unit = p->mem_unit;
+  mem_units = return_mem_units_rio (rio);
+
+  if (mem_unit > -1) {
+    if (mem_unit > mem_units) {
+      fprintf (stderr, "Memory unit identifier %d is outside the valid range of 0-%d for this device.\n",
+	       mem_unit, mem_units - 1);
+      return;
+    }
+
+    free_size = (long) return_free_mem_rio (rio, p->mem_unit) * 1024;
+  }
+
+  if (stat(p->filename, &statinfo) < 0) {
+    printf("rioutil/src/main.c add_track: could not stat file %s (%s)\n", p->filename, strerror (errno));
+    return;
+  }
+
+  if (S_ISDIR(statinfo.st_mode)) {
+    /* add files from directory */
+    dir_add_songs (p->filename, p->recursive_depth, p->mem_unit);
+    return;
+  }
+
+  if (!S_ISREG(statinfo.st_mode)) {
+    printf("rioutil/src/main.c add_track: %s is not a regular file!\n", p->filename);
+    return;
+  }
+
+  file_name = basename_simple (p->filename);
+  file_namel = strlen (file_name);
+
+  strncpy (display_name, file_name, 31);
+
+  if (file_namel > 32)
+    /* truncate long filenames */
+    sprintf (&display_name[14], "...%s", &file_name[file_namel - 14]);
+
+  printf("%32s [%03.1f MiB]: ", display_name, (double)statinfo.st_size / 1048576.0);
+    
+  if (-1 == p->mem_unit) {
+    for (int i = 0 ; i < mem_units ; i++) {
+      free_size = return_free_mem_rio (rio, i) * 1024;
+
+      if (free_size >= statinfo.st_size) {
+	p->mem_unit = i;
+	break;
+      }
+
+      /* insufficient space on this memory unit, try another */
+      if (i == mem_units - 1) {
+	ret = -ENOSPC;
+      }
+    }
+  } else if (free_size < statinfo.st_size) {
+    ret = -ENOSPC;
+    p->mem_unit = -1;
+  }
+
+  if (p->mem_unit >= 0) {
+    ret = add_song_rio (rio, p->mem_unit, p->filename, p->artist, p->title, p->album);
+  }
+
+  if (ret == URIO_SUCCESS) 
+    printf(" Complete [memory %i]\n", p->mem_unit);
+  else
+    printf(" Incomplete: %s\n", strerror (-ret));
+}
+
 static int add_tracks (rios_t *rio){
   struct _song *p;
-  struct stat statinfo;
-  char *file_name;
-  char display_name[32];
-  int free_size, mem_units, file_namel;
-  int ret, i;
   
   /* set up a signal handler for ^C and kill -15 */
   signal (SIGINT,  aborttransfer);
   signal (SIGTERM, aborttransfer);
   
   while ((p = upstack_pop()) != NULL) {
-    ret = URIO_SUCCESS;
-
-    if (stat(p->filename, &statinfo) < 0)
-      printf("rioutil/src/main.c add_track: could not stat file %s (%s)\n", p->filename, strerror (errno));
-    else if (S_ISDIR(statinfo.st_mode))
-      /* add files from directory */
-      dir_add_songs (p->filename, p->recursive_depth, p->mem_unit);
-    else if (!S_ISREG(statinfo.st_mode))
-      printf("rioutil/src/main.c add_track: %s is not a regular file!\n", p->filename);
-    else {
-      file_name = basename_simple (p->filename);
-      file_namel = strlen (file_name);
-
-      strncpy (display_name, file_name, 31);
-
-      if (file_namel > 32)
-	/* truncate long filenames */
-	sprintf (&display_name[14], "...%s", &file_name[file_namel - 14]);
-
-      printf("%32s [%03.1f MiB]: ", display_name, (double)statinfo.st_size / 1048576.0);
-    
-      /* mem_units will only ever be 1 or 2 */
-      mem_units = return_mem_units_rio (rio);
-
-      for (i = 0 ; i < mem_units ; i++) {
-	free_size = return_free_mem_rio (rio, p->mem_unit) * 1024;
-
-	if (free_size >= statinfo.st_size)
-	  break;
-
-	/* insufficient space on this memory unit, try another */
-	p->mem_unit = (p->mem_unit + 1) % mem_units;
-      }
-
-      if (i == mem_units)
-	ret = -ENOSPC;
-      else
-	ret = add_song_rio (rio, p->mem_unit, p->filename, p->artist, p->title, p->album);
-
-      if (ret == URIO_SUCCESS) 
-	printf(" Complete [memory %i]\n", p->mem_unit);
-      else
-	printf(" Incomplete: %s\n", strerror (-ret));
-    }
-
+    process_song (rio, p);
     free__song (p);
-    p = NULL;
   }
   
   return 0;
