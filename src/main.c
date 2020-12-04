@@ -1,5 +1,5 @@
 /**
- *   (c) 2001-2019 Nathan Hjelm <hjelmn@users.sourceforge.net>
+ *   (c) 2001-2020 Nathan Hjelm <hjelmn@users.sourceforge.net>
  *   v1.5.4 main.c
  *
  *   Console based interface for Rios using librioutil
@@ -168,9 +168,9 @@ int main (int argc, char *argv[]) {
 
       break;
     case 'a':
-      for (i = (unsigned) optind ; argv[i] && argv[i][0] != '-' ; ++i) {
-	upstack_push (mem_unit, flag_args[19], flag_args[18], flag_args[17], argv[i], 0);
-      }
+      printf ("mem_unit=%d, flag_args[19]=%s, flag_args[18]=%s, flag_args[17]=%s, argv[i]=%s\n",
+	      mem_unit, flag_args[19], flag_args[18], flag_args[17], optarg);
+      upstack_push (mem_unit, flag_args[19], flag_args[18], flag_args[17], optarg, 0);
     case 'c':
     case 'd':
     case 'n':
